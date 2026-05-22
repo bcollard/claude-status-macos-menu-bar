@@ -4,6 +4,10 @@ import Charts
 struct MenuView: View {
     @ObservedObject var store: UsageStore
     @ObservedObject private var launch = LaunchAtLogin.shared
+    /// When true, interactive controls (Button/Toggle/ProgressView) are
+    /// replaced with static SwiftUI shapes — required because ImageRenderer
+    /// can't draw AppKit-backed controls outside a running NSApplication.
+    var screenshotMode: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -60,26 +64,49 @@ struct MenuView: View {
 
     private var settings: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Toggle(isOn: Binding(
-                get: { launch.isEnabled },
-                set: { launch.setEnabled($0) }
-            )) {
-                Text("Launch at login")
-            }
-            .toggleStyle(.switch)
-            .controlSize(.small)
+            if screenshotMode {
+                staticToggleRow("Launch at login", isOn: true)
+                staticToggleRow("Show token count in menu bar", isOn: true)
+            } else {
+                Toggle(isOn: Binding(
+                    get: { launch.isEnabled },
+                    set: { launch.setEnabled($0) }
+                )) {
+                    Text("Launch at login")
+                }
+                .toggleStyle(.switch)
+                .controlSize(.small)
 
-            Toggle(isOn: $store.showCountInMenuBar) {
-                Text("Show token count in menu bar")
-            }
-            .toggleStyle(.switch)
-            .controlSize(.small)
+                Toggle(isOn: $store.showCountInMenuBar) {
+                    Text("Show token count in menu bar")
+                }
+                .toggleStyle(.switch)
+                .controlSize(.small)
 
-            if let err = launch.lastError {
-                Text(err).font(.caption2).foregroundStyle(.red).lineLimit(2)
+                if let err = launch.lastError {
+                    Text(err).font(.caption2).foregroundStyle(.red).lineLimit(2)
+                }
             }
         }
         .font(.callout)
+    }
+
+    @ViewBuilder
+    private func staticToggleRow(_ label: String, isOn: Bool) -> some View {
+        HStack {
+            Text(label)
+            Spacer()
+            ZStack(alignment: isOn ? .trailing : .leading) {
+                Capsule()
+                    .fill(isOn ? Color.green : Color.gray.opacity(0.35))
+                    .frame(width: 32, height: 18)
+                Circle()
+                    .fill(.white)
+                    .frame(width: 14, height: 14)
+                    .padding(2)
+                    .shadow(color: .black.opacity(0.15), radius: 1, y: 0.5)
+            }
+        }
     }
 
     private var headerSubtitle: String {
@@ -104,14 +131,18 @@ struct MenuView: View {
                 Text(headerSubtitle).font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
-            Button {
-                Task { await store.refresh() }
-            } label: {
-                Image(systemName: "arrow.clockwise")
+            if screenshotMode {
+                Image(systemName: "arrow.clockwise").foregroundStyle(.secondary)
+            } else {
+                Button {
+                    Task { await store.refresh() }
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .buttonStyle(.borderless)
+                .disabled(store.isRefreshing)
+                .help("Refresh now")
             }
-            .buttonStyle(.borderless)
-            .disabled(store.isRefreshing)
-            .help("Refresh now")
         }
     }
 
@@ -119,13 +150,27 @@ struct MenuView: View {
         HStack {
             if store.isRefreshing {
                 Text("Refreshing…").font(.caption2).foregroundStyle(.secondary)
+            } else if screenshotMode {
+                Text("Updated just now")
+                    .font(.caption2).foregroundStyle(.secondary)
             } else if let d = store.lastRefreshed {
                 Text("Updated \(d.formatted(.relative(presentation: .numeric)))")
                     .font(.caption2).foregroundStyle(.secondary)
             }
             Spacer()
-            Button("Quit") { NSApplication.shared.terminate(nil) }
-                .keyboardShortcut("q")
+            if screenshotMode {
+                Text("Quit")
+                    .font(.callout)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 3)
+                    .background(
+                        RoundedRectangle(cornerRadius: 5)
+                            .fill(Color.gray.opacity(0.18))
+                    )
+            } else {
+                Button("Quit") { NSApplication.shared.terminate(nil) }
+                    .keyboardShortcut("q")
+            }
         }
     }
 
@@ -221,12 +266,30 @@ struct MenuView: View {
             }
             .font(.callout)
             if let p = r.progress {
-                ProgressView(value: max(0, min(1, p)))
-                    .progressViewStyle(.linear)
-                    .tint(progressColor(for: p))
+                progressBar(value: p)
             }
         }
         .padding(.vertical, 1)
+    }
+
+    @ViewBuilder
+    private func progressBar(value p: Double) -> some View {
+        let clamped = max(0, min(1, p))
+        if screenshotMode {
+            GeometryReader { g in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.gray.opacity(0.18))
+                    Capsule()
+                        .fill(progressColor(for: p))
+                        .frame(width: g.size.width * clamped)
+                }
+            }
+            .frame(height: 6)
+        } else {
+            ProgressView(value: clamped)
+                .progressViewStyle(.linear)
+                .tint(progressColor(for: p))
+        }
     }
 
     private func progressColor(for p: Double) -> Color {

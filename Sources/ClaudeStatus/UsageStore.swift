@@ -27,10 +27,14 @@ final class UsageStore: ObservableObject {
     private var timer: Timer?
     var refreshInterval: TimeInterval = 60
 
-    init() {
+    init(demo: Bool = false) {
         let defaults = UserDefaults.standard
         if defaults.object(forKey: Self.kShowCount) == nil { defaults.set(true, forKey: Self.kShowCount) }
         self.showCountInMenuBar = defaults.bool(forKey: Self.kShowCount)
+
+        // In demo mode (screenshot generation), skip Keychain reads, file
+        // scans, and timers — the caller will set published fields directly.
+        if demo { return }
 
         loadAccount()
         Task { await refresh() }

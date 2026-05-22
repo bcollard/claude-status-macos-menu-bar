@@ -2,7 +2,19 @@ import SwiftUI
 
 @main
 struct ClaudeStatusApp: App {
-    @StateObject private var store = UsageStore()
+    @StateObject private var store: UsageStore
+
+    init() {
+        // CLI screenshot mode: `--screenshot <enterprise|pro> [outDir]`.
+        // Renders MenuView with anonymous demo data, writes PNG, exits.
+        let args = ProcessInfo.processInfo.arguments
+        if let i = args.firstIndex(of: "--screenshot") {
+            let plan = (i + 1 < args.count) ? args[i + 1] : "enterprise"
+            let outDir = (i + 2 < args.count) ? args[i + 2] : "docs/screenshots"
+            ScreenshotMode.run(plan: plan, outDir: outDir)
+        }
+        _store = StateObject(wrappedValue: UsageStore())
+    }
 
     var body: some Scene {
         MenuBarExtra {
