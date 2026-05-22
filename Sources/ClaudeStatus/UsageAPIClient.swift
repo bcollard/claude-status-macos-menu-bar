@@ -28,6 +28,7 @@ struct UsageAPIResponse: Sendable {
 enum UsageAPIError: Error, CustomStringConvertible {
     case noToken
     case tokenExpired(since: Date)
+    case rateLimited(retryAfter: TimeInterval?)
     case http(status: Int, body: String)
     case transport(Error)
     case decode
@@ -38,6 +39,11 @@ enum UsageAPIError: Error, CustomStringConvertible {
         case .tokenExpired(let d):
             let fmt = RelativeDateTimeFormatter()
             return "Keychain token expired \(fmt.localizedString(for: d, relativeTo: Date())). Open Claude Code to refresh."
+        case .rateLimited(let after):
+            if let s = after {
+                return "API rate-limited; retry in \(Int(s.rounded()))s."
+            }
+            return "API rate-limited."
         case .http(let s, let b):
             let snippet = b.prefix(200)
             return "API \(s): \(snippet)"
@@ -81,6 +87,11 @@ actor UsageAPIClient {
             throw UsageAPIError.transport(error)
         }
         guard let http = resp as? HTTPURLResponse else { throw UsageAPIError.decode }
+        if http.statusCode == 429 {
+            let retry = (http.value(forHTTPHeaderField: "Retry-After"))
+                .flatMap { TimeInterval($0) }
+            throw UsageAPIError.rateLimited(retryAfter: retry)
+        }
         if !(200..<300).contains(http.statusCode) {
             let body = String(data: data, encoding: .utf8) ?? ""
             throw UsageAPIError.http(status: http.statusCode, body: body)

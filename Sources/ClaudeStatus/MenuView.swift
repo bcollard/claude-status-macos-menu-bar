@@ -49,6 +49,14 @@ struct MenuView: View {
                 ForEach(api.rows) { r in
                     apiRow(r)
                 }
+                if let err = store.apiError {
+                    Text(err)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .opacity(0.75)
+                        .lineLimit(2)
+                        .padding(.top, 2)
+                }
             } else if store.apiUsage != nil {
                 Text("No plan-level usage data for this account.")
                     .font(.caption2)

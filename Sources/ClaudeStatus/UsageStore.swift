@@ -25,7 +25,17 @@ final class UsageStore: ObservableObject {
     private static let kShowCount = "showCountInMenuBar"
 
     private var timer: Timer?
+    /// Local log scan cadence — cheap (just file I/O).
     var refreshInterval: TimeInterval = 60
+    /// Minimum gap between `/api/oauth/usage` calls. Anthropic rate-limits
+    /// this endpoint aggressively (we saw HTTP 429 at the 60s cadence) and
+    /// the underlying data only changes per request anyway, so polling
+    /// every few minutes is plenty.
+    var apiRefreshInterval: TimeInterval = 5 * 60
+    /// When set, skip API calls until this date (driven by Retry-After or
+    /// our own backoff).
+    private var apiBackoffUntil: Date?
+    private var apiLastFetchedAt: Date?
 
     init(demo: Bool = false) {
         let defaults = UserDefaults.standard
@@ -67,14 +77,30 @@ final class UsageStore: ObservableObject {
         }
     }
 
-    private func loadAPI() async {
+    private func loadAPI(force: Bool = false) async {
+        // Throttle: skip if we fetched recently or we're on backoff.
+        if !force {
+            if let until = apiBackoffUntil, until > Date() { return }
+            if let last = apiLastFetchedAt,
+               Date().timeIntervalSince(last) < apiRefreshInterval { return }
+        }
+
         do {
             let creds = try KeychainReader.read()
             let resp = try await UsageAPIClient.shared.fetch(credentials: creds)
             apiUsage = resp
             apiError = nil
+            apiLastFetchedAt = Date()
+            apiBackoffUntil = nil
+        } catch UsageAPIError.rateLimited(let retryAfter) {
+            // Keep the last known good `apiUsage` visible. Back off for
+            // the server-suggested duration, or default to 5 min.
+            let waitFor = retryAfter ?? 5 * 60
+            apiBackoffUntil = Date().addingTimeInterval(waitFor)
+            apiError = "Rate-limited; retrying in \(Int(waitFor.rounded()))s"
         } catch {
-            apiUsage = nil
+            // Soft error: keep last known good apiUsage; just record the
+            // message so the UI can surface it if useful.
             apiError = "\(error)"
         }
     }

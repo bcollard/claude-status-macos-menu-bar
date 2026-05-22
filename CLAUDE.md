@@ -86,10 +86,14 @@ refresh:
 1. Scans JSONL files in two date windows (start-of-day, start-of-week) on
    a detached utility-priority task.
 2. Re-reads the Keychain entry (cheap; in-memory after first auth).
-3. Calls `UsageAPIClient.fetch()` — fails silently if token is expired or
-   the endpoint returns a non-2xx.
+3. Calls `loadAPI()` — gated by a separate `apiRefreshInterval` (default
+   5 min). The API call also respects `apiBackoffUntil` set when the
+   server returns 429 (honoring `Retry-After`, falling back to 5 min).
+   The previous `apiUsage` is **kept visible** during errors so the UI
+   doesn't blank on a transient failure.
 
-Manual refresh button in the dropdown calls the same `refresh()` method.
+Manual refresh button in the dropdown calls the same `refresh()` method
+(still respects the API throttle to avoid hammering on a 429).
 
 ---
 
