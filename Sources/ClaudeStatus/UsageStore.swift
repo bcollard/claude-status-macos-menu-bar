@@ -77,11 +77,24 @@ final class UsageStore: ObservableObject {
 
     var menuBarCount: String? {
         guard lastRefreshed != nil else { return nil }
-        // Prefer plan-aware Extra Usage display when available
-        // (Enterprise w/ overage credits enabled).
+        // 1. Enterprise w/ overage credits: "<util%> • $<used>"
         if let xu = apiUsage?.extraUsage {
             return String(format: "%.0f%% • $%.2f", xu.utilizationPercent, xu.usedDollars)
         }
+        // 2. Pro/Max: "5h X% • wk Y%" (whichever buckets are populated)
+        let five = apiUsage?.fiveHourPercent
+        let week = apiUsage?.weeklyPercent
+        switch (five, week) {
+        case let (.some(f), .some(w)):
+            return String(format: "5h %.0f%% • wk %.0f%%", f, w)
+        case let (.some(f), .none):
+            return String(format: "5h %.0f%%", f)
+        case let (.none, .some(w)):
+            return String(format: "wk %.0f%%", w)
+        case (.none, .none):
+            break
+        }
+        // 3. Fallback: today's local-log token total.
         let n = today.grandTotal
         guard n > 0 else { return nil }
         return formatTokens(n)

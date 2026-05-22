@@ -18,6 +18,11 @@ struct ExtraUsageInfo: Sendable {
 struct UsageAPIResponse: Sendable {
     let rows: [UsageAPIRow]
     let extraUsage: ExtraUsageInfo?
+    /// `five_hour.utilization` (0-100) when present — the most-current
+    /// signal on Pro/Max plans.
+    let fiveHourPercent: Double?
+    /// `seven_day.utilization` (0-100) when present.
+    let weeklyPercent: Double?
 }
 
 enum UsageAPIError: Error, CustomStringConvertible {
@@ -96,6 +101,8 @@ actor UsageAPIClient {
     private static func summarize(_ obj: [String: Any]) -> UsageAPIResponse {
         var rows: [UsageAPIRow] = []
         var extra: ExtraUsageInfo?
+        var fiveHour: Double?
+        var weekly: Double?
 
         // Extra usage / overage credits (typical of Enterprise opt-in).
         // `used_credits` and `monthly_limit` are in minor units (cents);
@@ -144,9 +151,14 @@ actor UsageAPIClient {
                 id: b.key, label: b.label, value: value, detail: detail,
                 progress: util / 100.0
             ))
+            if b.key == "five_hour" { fiveHour = util }
+            if b.key == "seven_day" { weekly = util }
         }
 
-        return UsageAPIResponse(rows: rows, extraUsage: extra)
+        return UsageAPIResponse(
+            rows: rows, extraUsage: extra,
+            fiveHourPercent: fiveHour, weeklyPercent: weekly
+        )
     }
 
     private static func relativeResetDetail(_ raw: Any?) -> String? {

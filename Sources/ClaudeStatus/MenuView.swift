@@ -83,10 +83,18 @@ struct MenuView: View {
     }
 
     private var headerSubtitle: String {
-        if let email = store.email, let org = store.organizationName {
-            return "\(email) · \(org)"
+        let identity = store.email ?? store.account
+        // Real orgs (e.g. "Acme Software") are useful; Pro pseudo-orgs that just wrap
+        // the email (e.g. "<email>'s Organization") add noise. Fall back to
+        // capitalized plan name in that case.
+        if let org = store.organizationName,
+           !org.lowercased().contains(identity.lowercased()) {
+            return "\(identity) · \(org)"
         }
-        return store.email ?? store.account
+        if let plan = store.plan {
+            return "\(identity) · \(plan.capitalized)"
+        }
+        return identity
     }
 
     private var header: some View {

@@ -23,10 +23,12 @@ open "/Applications/Claude Status.app"
 The first time you click the menu bar icon, macOS prompts to allow access
 to the Keychain entry `Claude Code-credentials` — choose **Always Allow**.
 
-The icon is a ✨ in the menu bar near the right side. On a MacBook Pro with
-a notch, the menu bar fills up and items can hide behind the notch. To
-find ours: hold ⌘ and drag menu bar icons, or temporarily quit one of your
-other menu bar apps.
+The icon is an orange `*` (SF Symbol `asterisk`, tinted) in the menu bar
+near the right side. On a MacBook Pro with a notch, the menu bar fills
+up and items can hide behind the notch. To find ours: hold ⌘ and drag
+menu bar icons, or temporarily quit one of your other menu bar apps.
+The dropdown's "Show token count in menu bar" toggle hides the title
+text next to the icon to save space.
 
 ---
 
@@ -47,7 +49,7 @@ claude-status-macos-menu-bar/
 │   ├── UsageAPIClient.swift            # GET /api/oauth/usage → list of plan rows
 │   ├── Pricing.swift                   # per-million-token price table + cost calc
 │   ├── LaunchAtLogin.swift             # SMAppService wrapper
-│   └── MenuView.swift                  # dropdown UI
+│   └── MenuView.swift                  # dropdown UI (Swift Charts stacked bars)
 ├── Casks/claude-status.rb              # Homebrew cask formula
 ├── scripts/
 │   ├── make_icon.swift                 # generates Resources/AppIcon.icns
@@ -210,7 +212,7 @@ Other endpoints discovered in the Claude Code binary
 Refresh endpoint: `https://platform.claude.com/v1/oauth/token`. We do
 **not** implement OAuth refresh ourselves (see Known Limitations).
 
-**Response schema** (observed 2026-05 on Enterprise):
+**Response schema — Enterprise** (observed 2026-05):
 
 ```json
 {
@@ -235,24 +237,75 @@ Refresh endpoint: `https://platform.claude.com/v1/oauth/token`. We do
 }
 ```
 
+**Response schema — Pro** (observed 2026-05):
+
+```json
+{
+  "five_hour": { "utilization": 13.0, "resets_at": "2026-05-22T13:20:00Z" },
+  "seven_day": { "utilization":  2.0, "resets_at": "2026-05-24T04:00:00Z" },
+  "seven_day_omelette":   { "utilization": 0.0, "resets_at": null },
+  "seven_day_oauth_apps": null,
+  "seven_day_opus":       null,
+  "seven_day_sonnet":     null,
+  "seven_day_cowork":     null,
+  "tangelo":              null,
+  "iguana_necktie":       null,
+  "omelette_promotional": null,
+  "extra_usage": { "is_enabled": false, "monthly_limit": null,
+                   "used_credits": null, "utilization": null,
+                   "currency": null, "disabled_reason": null }
+}
+```
+
 - Buckets at the top level are usage pools; `null` means doesn't apply to the
-  current plan. For Enterprise most are null; `extra_usage` carries the real
-  signal (monthly overage credits, in USD).
+  current plan. Pro populates `five_hour` and `seven_day`; Enterprise leaves
+  most null and surfaces overage in `extra_usage`.
 - **`used_credits` and `monthly_limit` are minor units (cents), not dollars.**
   Divide by 100 before display — Anthropic follows the standard financial
   convention so the integer storage avoids float drift. E.g. `25000` means
-  `$250.00`, not `$25,000`. (Confirmed by cross-checking the figure shown
-  at https://claude.ai/settings/usage.)
+  `$250.00`, not `$25,000`. (Confirmed by cross-checking
+  https://claude.ai/settings/usage.)
 - `utilization` is already a percentage (0-100), not a fraction.
-- For Pro/Max users, `five_hour` and `seven_day` (and per-model variants) are
-  expected to be non-null with `{ utilization, resets_at }`.
-- `tangelo`, `iguana_necktie`, `omelette_promotional` look like Anthropic
-  internal codenames for various pools — we don't render them unless populated.
+- `tangelo`, `iguana_necktie`, `omelette_promotional`, `seven_day_omelette`
+  look like Anthropic internal codenames for various pools — we don't render
+  them unless populated and non-zero.
 
-`UsageAPIClient.summarize()` walks a known list of bucket keys, plus the
-`extra_usage` block, and returns an ordered list of `UsageAPIRow(label, value,
-detail)` that `MenuView` renders. Unknown shapes degrade to an empty plan
-section — local-log data still shows.
+`UsageAPIClient.summarize()` returns `UsageAPIResponse(rows: [UsageAPIRow],
+extraUsage: ExtraUsageInfo?)`:
+
+- `UsageAPIRow` carries `label`, `value`, optional `detail`, and `progress`
+  (0.0–1.0) so `MenuView` can draw a `ProgressView` under each row. Color
+  thresholds: green `<60%`, orange `60–85%`, red `≥85%`.
+- `extraUsage` is the same data parsed into typed `Double` fields, used
+  by the menu bar title (see below).
+- **Row order:** `extra_usage` is appended **before** the standard buckets
+  so it sits above `Promotional`/etc. in the UI.
+
+Unknown shapes degrade to an empty plan section — local-log data still shows.
+
+### Menu bar title
+
+`UsageStore.menuBarCount` decides what to render next to the icon:
+
+1. **Extra Usage available** (typical Enterprise opt-in) →
+   `"<utilization>% • $<usedDollars>"` (e.g. `64% • $163.45`).
+2. **Pro/Max** (no extra_usage, but `five_hour`/`seven_day` populated) →
+   `"5h X% • wk Y%"` (e.g. `5h 13% • wk 2%`). If only one bucket is
+   populated, just that one (`5h X%` or `wk Y%`).
+3. **Fallback** → today's grand-total tokens via `formatTokens(...)`
+   (e.g. `2.7M`).
+4. If `showCountInMenuBar` is off, nothing — just the icon.
+
+The middle-bullet separator is `U+2022`. The plan-aware fall-through
+prefers API data over local logs because the API tells you about caps
+you can actually hit; raw token counts don't.
+
+### Header subtitle
+
+`MenuView.headerSubtitle` shows `<email> · <org>` for real organizations
+(e.g. "Acme Software"). Pro accounts get an auto-generated pseudo-org named
+`<email>'s Organization` — we detect that by string-containment and fall
+back to `<email> · <plan-name>` (e.g. `you@example.com · Pro`).
 
 ---
 
@@ -305,10 +358,12 @@ Anthropic's cooperation. Stick with the cask path.
 
 ### 6. Enterprise plan specifics
 
-The Keychain blob reports `rateLimitTier: default_claude_zero` for our
-account — Enterprise pools are admin-managed and there's no per-user
-weekly cap to display. The dropdown shows plan name + rate-limit tier but
-the API rows will likely stay empty for Enterprise.
+The Keychain blob reports `rateLimitTier: default_claude_zero` for an
+Enterprise account — pools are admin-managed and there's no per-user
+weekly cap. Standard buckets (`five_hour`, `seven_day`, …) come back as
+`null` on Enterprise. **`extra_usage` is the load-bearing field** there:
+it carries monthly overage credits in USD with a real utilization %, and
+that's what the menu bar title surfaces.
 
 ---
 
@@ -411,13 +466,22 @@ first match wins.
 
 ### Menu bar appearance
 
-`App.swift` declares the label. Toggle "Show token count in menu bar" in
-the dropdown to show/hide the number next to the ✨ icon.
+`App.swift` declares the label as `MenuBarLabel` — an HStack of:
+- `Image(systemName: "asterisk").foregroundStyle(.orange)` — inspired by
+  Anthropic's asterisk-flower mark but using Apple's licensed SF Symbol,
+  so we don't reproduce the trademarked Claude logo.
+- An optional title (`UsageStore.menuBarCount`) hidden by the
+  "Show token count in menu bar" toggle.
 
-### App icon
+To change the icon, edit the `Image(systemName:)` call. Other distinctive
+options: `sparkles`, `seal.fill`, `staroflife.fill`. For a different
+color use `.foregroundStyle(.tint)` or any `Color`.
+
+### App icon (Dock / Finder)
 
 `scripts/make_icon.swift` draws the icon programmatically (orange gradient
-+ white starburst). Edit and re-run, then rebuild.
++ white starburst). Edit and re-run, then rebuild. The menu bar icon and
+the .icns app icon are independent — changing one doesn't affect the other.
 
 ---
 
@@ -428,18 +492,21 @@ the dropdown to show/hide the number next to the ✨ icon.
   notarytool submit ... --wait` + `xcrun stapler staple`). No code changes
   needed.
 
-- **Validate `/api/oauth/usage` against a fresh token.** After a fresh
-  `claude /logout` + re-login, run the binary, click the icon, and check
-  whether `apiUsage` populates. If it does and the response shape differs
-  from what `UsageAPIClient.summarize()` understands, extend the
-  `candidates` list with the new keys.
-
 - **More plans in pricing.** If you start using older Sonnet/Haiku
   variants the price table still matches by substring. If Anthropic ships
   a new family (e.g. `claude-sonnet-5-x`), add a new entry.
 
-- **Settings panel.** Refresh interval, show/hide cost column, choose
-  which window appears in the menu bar title (today vs. week).
+- **Settings panel.** Refresh interval, what the menu bar title shows
+  (extra-usage vs. today's tokens vs. weekly), color of the icon.
+
+- **Validate against Max accounts.** Schema verified on Enterprise and Pro.
+  Max should also populate `five_hour`/`seven_day`; if it adds per-model
+  variants (`seven_day_opus`, `seven_day_sonnet`) those are already in the
+  bucket list and will render automatically.
 
 - **Diagnostics view.** A hidden "Show raw Keychain blob" / "Show raw
   /usage response" panel for debugging.
+
+- **Tooltip / popover with detail.** Today/Week now collapse to a stacked
+  bar + legend; raw Input/Output/CacheRead/CacheCreate counts are still in
+  `UsageWindow` and can be shown on hover or in an expanded view.
