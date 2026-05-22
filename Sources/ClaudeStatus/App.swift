@@ -23,6 +23,10 @@ struct ClaudeStatusApp: App {
             MenuBarLabel(store: store)
         }
         .menuBarExtraStyle(.window)
+
+        Settings {
+            SettingsView(store: store)
+        }
     }
 }
 

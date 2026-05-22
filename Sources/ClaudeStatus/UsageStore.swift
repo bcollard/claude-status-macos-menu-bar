@@ -22,7 +22,15 @@ final class UsageStore: ObservableObject {
         didSet { UserDefaults.standard.set(showCountInMenuBar, forKey: Self.kShowCount) }
     }
 
+    @Published var apiRefreshChoice: APIRefreshChoice {
+        didSet {
+            UserDefaults.standard.set(apiRefreshChoice.rawValue, forKey: Self.kApiRefresh)
+            apiRefreshInterval = apiRefreshChoice.seconds
+        }
+    }
+
     private static let kShowCount = "showCountInMenuBar"
+    private static let kApiRefresh = "apiRefreshChoice"
 
     private var timer: Timer?
     /// Local log scan cadence — cheap (just file I/O).
@@ -30,8 +38,8 @@ final class UsageStore: ObservableObject {
     /// Minimum gap between `/api/oauth/usage` calls. Anthropic rate-limits
     /// this endpoint aggressively (we saw HTTP 429 at the 60s cadence) and
     /// the underlying data only changes per request anyway, so polling
-    /// every few minutes is plenty.
-    var apiRefreshInterval: TimeInterval = 5 * 60
+    /// every few minutes is plenty. Driven by `apiRefreshChoice`.
+    var apiRefreshInterval: TimeInterval = APIRefreshChoice.default.seconds
     /// When set, skip API calls until this date (driven by Retry-After or
     /// our own backoff).
     private var apiBackoffUntil: Date?
@@ -41,6 +49,11 @@ final class UsageStore: ObservableObject {
         let defaults = UserDefaults.standard
         if defaults.object(forKey: Self.kShowCount) == nil { defaults.set(true, forKey: Self.kShowCount) }
         self.showCountInMenuBar = defaults.bool(forKey: Self.kShowCount)
+
+        let savedChoice = (defaults.string(forKey: Self.kApiRefresh))
+            .flatMap(APIRefreshChoice.init(rawValue:)) ?? .default
+        self.apiRefreshChoice = savedChoice
+        self.apiRefreshInterval = savedChoice.seconds
 
         // In demo mode (screenshot generation), skip Keychain reads, file
         // scans, and timers — the caller will set published fields directly.

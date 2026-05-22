@@ -3,11 +3,12 @@ import Charts
 
 struct MenuView: View {
     @ObservedObject var store: UsageStore
-    @ObservedObject private var launch = LaunchAtLogin.shared
     /// When true, interactive controls (Button/Toggle/ProgressView) are
     /// replaced with static SwiftUI shapes — required because ImageRenderer
     /// can't draw AppKit-backed controls outside a running NSApplication.
     var screenshotMode: Bool = false
+
+    @Environment(\.openSettings) private var openSettings
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -25,8 +26,6 @@ struct MenuView: View {
                     .foregroundStyle(.red)
                     .lineLimit(3)
             }
-            Divider()
-            settings
             Divider()
             footer
         }
@@ -66,53 +65,6 @@ struct MenuView: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(3)
-            }
-        }
-    }
-
-    private var settings: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            if screenshotMode {
-                staticToggleRow("Launch at login", isOn: true)
-                staticToggleRow("Show token count in menu bar", isOn: true)
-            } else {
-                Toggle(isOn: Binding(
-                    get: { launch.isEnabled },
-                    set: { launch.setEnabled($0) }
-                )) {
-                    Text("Launch at login")
-                }
-                .toggleStyle(.switch)
-                .controlSize(.small)
-
-                Toggle(isOn: $store.showCountInMenuBar) {
-                    Text("Show token count in menu bar")
-                }
-                .toggleStyle(.switch)
-                .controlSize(.small)
-
-                if let err = launch.lastError {
-                    Text(err).font(.caption2).foregroundStyle(.red).lineLimit(2)
-                }
-            }
-        }
-        .font(.callout)
-    }
-
-    @ViewBuilder
-    private func staticToggleRow(_ label: String, isOn: Bool) -> some View {
-        HStack {
-            Text(label)
-            Spacer()
-            ZStack(alignment: isOn ? .trailing : .leading) {
-                Capsule()
-                    .fill(isOn ? Color.green : Color.gray.opacity(0.35))
-                    .frame(width: 32, height: 18)
-                Circle()
-                    .fill(.white)
-                    .frame(width: 14, height: 14)
-                    .padding(2)
-                    .shadow(color: .black.opacity(0.15), radius: 1, y: 0.5)
             }
         }
     }
@@ -167,19 +119,30 @@ struct MenuView: View {
             }
             Spacer()
             if screenshotMode {
-                Text("Quit")
-                    .font(.callout)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 3)
-                    .background(
-                        RoundedRectangle(cornerRadius: 5)
-                            .fill(Color.gray.opacity(0.18))
-                    )
+                staticPill("Options…")
+                staticPill("Quit")
             } else {
+                Button("Options…") {
+                    NSApp.activate(ignoringOtherApps: true)
+                    openSettings()
+                }
+                .keyboardShortcut(",", modifiers: [.command])
                 Button("Quit") { NSApplication.shared.terminate(nil) }
                     .keyboardShortcut("q")
             }
         }
+    }
+
+    @ViewBuilder
+    private func staticPill(_ label: String) -> some View {
+        Text(label)
+            .font(.callout)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 3)
+            .background(
+                RoundedRectangle(cornerRadius: 5)
+                    .fill(Color.gray.opacity(0.18))
+            )
     }
 
     @ViewBuilder
