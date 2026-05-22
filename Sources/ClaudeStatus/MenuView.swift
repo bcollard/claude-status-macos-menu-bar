@@ -1,0 +1,239 @@
+import SwiftUI
+import Charts
+
+struct MenuView: View {
+    @ObservedObject var store: UsageStore
+    @ObservedObject private var launch = LaunchAtLogin.shared
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            header
+            Divider()
+            planBlock
+            Divider()
+            usageBlock(title: "Today", window: store.today)
+            Divider()
+            usageBlock(title: "This Week", window: store.week)
+            if let err = store.lastError {
+                Divider()
+                Text(err)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .lineLimit(3)
+            }
+            Divider()
+            settings
+            Divider()
+            footer
+        }
+        .padding(14)
+        .frame(width: 340)
+    }
+
+    @ViewBuilder
+    private var planBlock: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Plan").font(.subheadline.bold())
+            row("Subscription", (store.plan ?? "—").capitalized)
+            if let tier = store.rateLimitTier {
+                row("Rate-limit tier", tier)
+            }
+            if let exp = store.tokenExpiresAt {
+                row("Token", exp > Date() ? "valid" : "expired")
+            }
+            if let api = store.apiUsage, !api.rows.isEmpty {
+                ForEach(api.rows) { r in
+                    apiRow(r)
+                }
+            } else if store.apiUsage != nil {
+                Text("No plan-level usage data for this account.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            } else if let err = store.apiError {
+                Text(err)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(3)
+            }
+        }
+    }
+
+    private var settings: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Toggle(isOn: Binding(
+                get: { launch.isEnabled },
+                set: { launch.setEnabled($0) }
+            )) {
+                Text("Launch at login")
+            }
+            .toggleStyle(.switch)
+            .controlSize(.small)
+
+            Toggle(isOn: $store.showCountInMenuBar) {
+                Text("Show token count in menu bar")
+            }
+            .toggleStyle(.switch)
+            .controlSize(.small)
+
+            if let err = launch.lastError {
+                Text(err).font(.caption2).foregroundStyle(.red).lineLimit(2)
+            }
+        }
+        .font(.callout)
+    }
+
+    private var headerSubtitle: String {
+        if let email = store.email, let org = store.organizationName {
+            return "\(email) · \(org)"
+        }
+        return store.email ?? store.account
+    }
+
+    private var header: some View {
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Claude Code Usage").font(.headline)
+                Text(headerSubtitle).font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button {
+                Task { await store.refresh() }
+            } label: {
+                Image(systemName: "arrow.clockwise")
+            }
+            .buttonStyle(.borderless)
+            .disabled(store.isRefreshing)
+            .help("Refresh now")
+        }
+    }
+
+    private var footer: some View {
+        HStack {
+            if store.isRefreshing {
+                Text("Refreshing…").font(.caption2).foregroundStyle(.secondary)
+            } else if let d = store.lastRefreshed {
+                Text("Updated \(d.formatted(.relative(presentation: .numeric)))")
+                    .font(.caption2).foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button("Quit") { NSApplication.shared.terminate(nil) }
+                .keyboardShortcut("q")
+        }
+    }
+
+    @ViewBuilder
+    private func usageBlock(title: String, window: UsageWindow) -> some View {
+        let models = window.byModel.values.sorted { $0.totalTokens > $1.totalTokens }
+        let total = window.grandTotal
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(title).font(.subheadline.bold())
+                Spacer()
+                Text(formatTokens(total))
+                    .font(.subheadline.monospacedDigit())
+                Text(Pricing.formatUSD(Pricing.cost(window)))
+                    .font(.subheadline.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+            Text("\(window.sessionCount) sessions · \(window.totalMessages) turns")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+
+            if !models.isEmpty {
+                modelStackBar(models: models, total: total)
+                modelLegend(models: models)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func modelStackBar(models: [ModelUsage], total: Int) -> some View {
+        Chart {
+            ForEach(models, id: \.model) { mu in
+                BarMark(
+                    x: .value("Tokens", mu.totalTokens),
+                    y: .value("Period", "")
+                )
+                .foregroundStyle(by: .value("Model", mu.shortName))
+                .annotation(position: .overlay) { EmptyView() }
+            }
+        }
+        .chartForegroundStyleScale(domain: models.map(\.shortName),
+                                   range: models.map { color(for: $0.shortName) })
+        .chartXAxis(.hidden)
+        .chartYAxis(.hidden)
+        .chartLegend(.hidden)
+        .chartPlotStyle { plot in
+            plot.clipShape(RoundedRectangle(cornerRadius: 3))
+        }
+        .frame(height: 10)
+    }
+
+    @ViewBuilder
+    private func modelLegend(models: [ModelUsage]) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            ForEach(models, id: \.model) { mu in
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(color(for: mu.shortName))
+                        .frame(width: 7, height: 7)
+                    Text(mu.shortName).font(.caption)
+                    Spacer()
+                    Text(formatTokens(mu.totalTokens))
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                    Text(Pricing.formatUSD(Pricing.cost(mu)))
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .frame(width: 56, alignment: .trailing)
+                }
+            }
+        }
+    }
+
+    /// Stable per-family color so Opus is always the same hue across blocks.
+    private func color(for shortName: String) -> Color {
+        let lc = shortName.lowercased()
+        if lc.hasPrefix("opus")   { return .orange }
+        if lc.hasPrefix("sonnet") { return .blue }
+        if lc.hasPrefix("haiku")  { return .green }
+        return .gray
+    }
+
+    @ViewBuilder
+    private func apiRow(_ r: UsageAPIRow) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(r.label).foregroundStyle(.secondary)
+                Spacer()
+                Text(r.value).monospacedDigit()
+                if let d = r.detail {
+                    Text(d).font(.caption2).foregroundStyle(.secondary)
+                }
+            }
+            .font(.callout)
+            if let p = r.progress {
+                ProgressView(value: max(0, min(1, p)))
+                    .progressViewStyle(.linear)
+                    .tint(progressColor(for: p))
+            }
+        }
+        .padding(.vertical, 1)
+    }
+
+    private func progressColor(for p: Double) -> Color {
+        if p >= 0.85 { return .red }
+        if p >= 0.60 { return .orange }
+        return .green
+    }
+
+    @ViewBuilder
+    private func row(_ label: String, _ value: String) -> some View {
+        HStack {
+            Text(label).foregroundStyle(.secondary)
+            Spacer()
+            Text(value).monospacedDigit()
+        }
+        .font(.callout)
+    }
+}
