@@ -8,31 +8,51 @@ enum ScreenshotMode {
     static let canvasWidth: CGFloat = 1440
     static let canvasHeight: CGFloat = 900
 
-    /// Render the MenuView dropdown to PNG with anonymous demo data.
-    /// Invoked via `ClaudeStatus --screenshot <plan> [outDir]` from CLI.
-    static func run(plan rawPlan: String, outDir: String) -> Never {
-        let plan = rawPlan.lowercased()
-        let store: UsageStore
-        let copy: ScreenshotCopy
-        switch plan {
-        case "enterprise":
-            store = DemoData.enterpriseStore()
-            copy = .enterprise
-        case "pro":
-            store = DemoData.proStore()
-            copy = .pro
-        default:
-            FileHandle.standardError.write(Data("unknown plan: \(rawPlan) (expected 'enterprise' or 'pro')\n".utf8))
-            exit(2)
-        }
-
+    /// Render screenshots with anonymous demo data.
+    ///   kind = enterprise | pro            (full-canvas App-Store gallery)
+    ///        | popup-enterprise | popup-pro (just the dropdown card)
+    ///        | settings                     (Settings window)
+    ///        | all                          (every variant)
+    static func run(kind rawKind: String, outDir: String) -> Never {
         let fm = FileManager.default
         try? fm.createDirectory(atPath: outDir, withIntermediateDirectories: true)
 
+        let kinds: [String]
+        switch rawKind.lowercased() {
+        case "all":
+            kinds = ["enterprise", "pro", "popup-enterprise", "popup-pro", "settings"]
+        case let s where ["enterprise", "pro", "popup-enterprise", "popup-pro", "settings"].contains(s):
+            kinds = [s]
+        default:
+            FileHandle.standardError.write(Data("unknown kind: \(rawKind)\n".utf8))
+            exit(2)
+        }
+
+        for kind in kinds {
+            switch kind {
+            case "enterprise":       renderMarketing(planKey: "enterprise", outDir: outDir)
+            case "pro":              renderMarketing(planKey: "pro",        outDir: outDir)
+            case "popup-enterprise": renderPopup(planKey: "enterprise",     outDir: outDir)
+            case "popup-pro":        renderPopup(planKey: "pro",            outDir: outDir)
+            case "settings":         renderSettings(outDir: outDir)
+            default: break
+            }
+        }
+
+        exit(0)
+    }
+
+    // MARK: - Variants
+
+    private static func renderMarketing(planKey: String, outDir: String) {
+        let (store, copy) = planKey == "enterprise"
+            ? (DemoData.enterpriseStore(), ScreenshotCopy.enterprise)
+            : (DemoData.proStore(),        ScreenshotCopy.pro)
+
         for scheme: ColorScheme in [.light, .dark] {
-            let name = scheme == .light ? "light" : "dark"
+            let suffix = scheme == .light ? "light" : "dark"
             let outURL = URL(fileURLWithPath: outDir)
-                .appendingPathComponent("claude-status-\(plan)-\(name).png")
+                .appendingPathComponent("claude-status-\(planKey)-\(suffix).png")
 
             let layout = ScreenshotLayout(
                 scheme: scheme,
@@ -44,27 +64,206 @@ enum ScreenshotMode {
             .frame(width: canvasWidth, height: canvasHeight)
             .environment(\.colorScheme, scheme)
 
-            let renderer = ImageRenderer(content: layout)
-            renderer.scale = 2.0
-            renderer.isOpaque = true
+            writePNG(view: layout, to: outURL, opaque: true)
+        }
+    }
 
-            guard let nsImage = renderer.nsImage,
-                  let tiff = nsImage.tiffRepresentation,
-                  let rep = NSBitmapImageRep(data: tiff),
-                  let png = rep.representation(using: .png, properties: [:]) else {
-                FileHandle.standardError.write(Data("render failed for \(outURL.path)\n".utf8))
-                exit(1)
+    private static func renderPopup(planKey: String, outDir: String) {
+        let store = planKey == "enterprise"
+            ? DemoData.enterpriseStore()
+            : DemoData.proStore()
+
+        for scheme: ColorScheme in [.light, .dark] {
+            let suffix = scheme == .light ? "light" : "dark"
+            let outURL = URL(fileURLWithPath: outDir)
+                .appendingPathComponent("popup-\(planKey)-\(suffix).png")
+
+            // Pure card on transparent background, generous margin to fit
+            // the drop shadow without clipping. Used in the website hero.
+            let view = MenuView(store: store, screenshotMode: true)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(scheme == .dark
+                              ? Color(white: 0.16)
+                              : Color(white: 0.995))
+                        .shadow(color: .black.opacity(0.28),
+                                radius: 28, x: 0, y: 14)
+                )
+                .padding(40)
+                .environment(\.colorScheme, scheme)
+
+            writePNG(view: view, to: outURL, opaque: false)
+        }
+    }
+
+    private static func renderSettings(outDir: String) {
+        let store = DemoData.enterpriseStore()
+        for scheme: ColorScheme in [.light, .dark] {
+            let suffix = scheme == .light ? "light" : "dark"
+            let outURL = URL(fileURLWithPath: outDir)
+                .appendingPathComponent("settings-\(suffix).png")
+
+            // SwiftUI `Form { ... }.formStyle(.grouped)` collapses to a
+            // blank rectangle through ImageRenderer (it needs a running
+            // NSApplication to lay out). Hand-roll the grouped look from
+            // primitives instead.
+            let view = StaticSettingsView(store: store, scheme: scheme)
+                .padding(40)
+                .environment(\.colorScheme, scheme)
+
+            writePNG(view: view, to: outURL, opaque: false)
+        }
+    }
+
+    // MARK: - Renderer plumbing
+
+    private static func writePNG<V: View>(view: V, to outURL: URL, opaque: Bool) {
+        let renderer = ImageRenderer(content: view)
+        renderer.scale = 2.0
+        renderer.isOpaque = opaque
+
+        guard let nsImage = renderer.nsImage,
+              let tiff = nsImage.tiffRepresentation,
+              let rep = NSBitmapImageRep(data: tiff),
+              let png = rep.representation(using: .png, properties: [:]) else {
+            FileHandle.standardError.write(Data("render failed for \(outURL.path)\n".utf8))
+            exit(1)
+        }
+        do {
+            try png.write(to: outURL)
+            print("→ \(outURL.path) (\(rep.pixelsWide)×\(rep.pixelsHigh), \(png.count) bytes)")
+        } catch {
+            FileHandle.standardError.write(Data("write failed: \(error)\n".utf8))
+            exit(1)
+        }
+    }
+}
+
+/// Hand-rolled mimic of `SettingsView` for ImageRenderer (Form/.grouped
+/// renders blank without a running NSApplication).
+private struct StaticSettingsView: View {
+    let store: UsageStore
+    let scheme: ColorScheme
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            section(header: "General") {
+                row { Text("Launch at login") } trailing: { toggle(on: true) }
+                divider
+                row { Text("Show token count in menu bar") } trailing: { toggle(on: true) }
             }
-            do {
-                try png.write(to: outURL)
-                print("→ \(outURL.path) (\(rep.pixelsWide)×\(rep.pixelsHigh), \(png.count) bytes)")
-            } catch {
-                FileHandle.standardError.write(Data("write failed: \(error)\n".utf8))
-                exit(1)
+
+            sectionWithFooter(
+                header: "Refresh",
+                footer: "Anthropic rate-limits the usage endpoint. Lower intervals can trigger HTTP 429; the app honors Retry-After and keeps showing the last good values."
+            ) {
+                row { Text("Plan usage (API)") } trailing: {
+                    pillPicker(value: store.apiRefreshChoice.label)
+                }
+            }
+
+            section(header: "About") {
+                row { Text("Claude Status") } trailing: {
+                    Text("v0.1.0 (1)").monospacedDigit().foregroundStyle(.secondary)
+                }
+                divider
+                row { Text("Account") } trailing: {
+                    Text(store.email ?? store.account).foregroundStyle(.secondary)
+                }
+                divider
+                row { Text("Plan") } trailing: {
+                    Text((store.plan ?? "—").capitalized).foregroundStyle(.secondary)
+                }
             }
         }
+        .frame(width: 480)
+        .padding(.vertical, 28)
+        .padding(.horizontal, 28)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(scheme == .dark
+                      ? Color(red: 0.13, green: 0.13, blue: 0.14)
+                      : Color(red: 0.94, green: 0.94, blue: 0.96))
+                .shadow(color: .black.opacity(0.25), radius: 26, x: 0, y: 12)
+        )
+    }
 
-        exit(0)
+    @ViewBuilder
+    private func section<Content: View>(header: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(header)
+                .font(.headline)
+            VStack(spacing: 0) { content() }
+                .padding(.vertical, 6)
+                .padding(.horizontal, 14)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(scheme == .dark
+                              ? Color(white: 0.18)
+                              : Color.white)
+                )
+        }
+    }
+
+    @ViewBuilder
+    private func sectionWithFooter<Content: View>(
+        header: String, footer: String, @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            section(header: header, content: content)
+            Text(footer)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 4)
+        }
+    }
+
+    @ViewBuilder
+    private func row<L: View, T: View>(@ViewBuilder _ label: () -> L,
+                                       @ViewBuilder trailing: () -> T) -> some View {
+        HStack {
+            label()
+            Spacer()
+            trailing()
+        }
+        .padding(.vertical, 8)
+    }
+
+    private var divider: some View {
+        Rectangle()
+            .fill(Color.gray.opacity(0.18))
+            .frame(height: 1)
+    }
+
+    private func toggle(on: Bool) -> some View {
+        ZStack(alignment: on ? .trailing : .leading) {
+            Capsule()
+                .fill(on ? Color.green : Color.gray.opacity(0.35))
+                .frame(width: 34, height: 20)
+            Circle()
+                .fill(.white)
+                .frame(width: 16, height: 16)
+                .padding(2)
+                .shadow(color: .black.opacity(0.15), radius: 1, y: 0.5)
+        }
+    }
+
+    private func pillPicker(value: String) -> some View {
+        HStack(spacing: 6) {
+            Text(value)
+            Image(systemName: "chevron.up.chevron.down")
+                .imageScale(.small)
+                .foregroundStyle(.secondary)
+        }
+        .font(.callout)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 4)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(scheme == .dark
+                      ? Color(white: 0.26)
+                      : Color(white: 0.94))
+        )
     }
 }
 

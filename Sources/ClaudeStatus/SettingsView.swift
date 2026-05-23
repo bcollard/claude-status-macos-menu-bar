@@ -3,31 +3,44 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject var store: UsageStore
     @ObservedObject private var launch = LaunchAtLogin.shared
+    var screenshotMode: Bool = false
 
     var body: some View {
         Form {
             Section("General") {
-                Toggle(isOn: Binding(
-                    get: { launch.isEnabled },
-                    set: { launch.setEnabled($0) }
-                )) {
-                    Text("Launch at login")
-                }
-                if let err = launch.lastError {
-                    Text(err)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                        .lineLimit(2)
-                }
+                if screenshotMode {
+                    staticToggle("Launch at login", isOn: true)
+                    staticToggle("Show token count in menu bar", isOn: true)
+                } else {
+                    Toggle(isOn: Binding(
+                        get: { launch.isEnabled },
+                        set: { launch.setEnabled($0) }
+                    )) {
+                        Text("Launch at login")
+                    }
+                    if let err = launch.lastError {
+                        Text(err)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                            .lineLimit(2)
+                    }
 
-                Toggle("Show token count in menu bar",
-                       isOn: $store.showCountInMenuBar)
+                    Toggle("Show token count in menu bar",
+                           isOn: $store.showCountInMenuBar)
+                }
             }
 
             Section {
-                Picker("Plan usage (API)", selection: $store.apiRefreshChoice) {
-                    ForEach(APIRefreshChoice.allCases) { choice in
-                        Text(choice.label).tag(choice)
+                if screenshotMode {
+                    staticPicker(
+                        label: "Plan usage (API)",
+                        value: store.apiRefreshChoice.label
+                    )
+                } else {
+                    Picker("Plan usage (API)", selection: $store.apiRefreshChoice) {
+                        ForEach(APIRefreshChoice.allCases) { choice in
+                            Text(choice.label).tag(choice)
+                        }
                     }
                 }
             } header: {
@@ -56,6 +69,44 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .frame(width: 480, height: 380)
+    }
+
+    @ViewBuilder
+    private func staticToggle(_ label: String, isOn: Bool) -> some View {
+        HStack {
+            Text(label)
+            Spacer()
+            ZStack(alignment: isOn ? .trailing : .leading) {
+                Capsule()
+                    .fill(isOn ? Color.green : Color.gray.opacity(0.35))
+                    .frame(width: 32, height: 18)
+                Circle()
+                    .fill(.white)
+                    .frame(width: 14, height: 14)
+                    .padding(2)
+                    .shadow(color: .black.opacity(0.15), radius: 1, y: 0.5)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func staticPicker(label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+            Spacer()
+            HStack(spacing: 4) {
+                Text(value).foregroundStyle(.secondary)
+                Image(systemName: "chevron.up.chevron.down")
+                    .imageScale(.small)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(
+                RoundedRectangle(cornerRadius: 5)
+                    .fill(Color.gray.opacity(0.18))
+            )
+        }
     }
 
     private static var versionString: String {

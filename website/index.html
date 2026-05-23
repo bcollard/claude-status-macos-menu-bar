@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Claude Status — macOS menu bar for Claude Code usage</title>
+  <meta name="description" content="A tiny macOS menu bar app that monitors your Claude Code usage. Live plan limits, per-model breakdown, API-equivalent cost — without leaving the keyboard.">
+  <meta name="theme-color" content="#d97757">
+
+  <meta property="og:title" content="Claude Status — Claude Code usage in your menu bar">
+  <meta property="og:description" content="Live spend, plan limits, per-model breakdown. Reuses your Claude Code login. Open source, free, native Swift.">
+  <meta property="og:image" content="https://claudestatus.runlocal.dev/assets/og-image.png">
+  <meta property="og:url" content="https://claudestatus.runlocal.dev/">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<nav class="nav">
+  <a class="brand" href="#top" aria-label="Claude Status">
+    <span class="brand-mark" aria-hidden="true">
+      <img src="assets/asterisk.svg" width="22" height="22" alt="">
+    </span>
+    <strong>Claude Status</strong>
+  </a>
+  <div class="nav-right">
+    <a href="#features">Features</a>
+    <a href="#install">Install</a>
+    <a href="#faq">FAQ</a>
+    <a href="https://github.com/bcollard/claude-status-macos-menu-bar" class="nav-github" target="_blank" rel="noopener">
+      GitHub →
+    </a>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+      <span class="sun">☀</span>
+      <span class="moon">☾</span>
+    </button>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="hero-bg" aria-hidden="true"></div>
+
+  <div class="container hero-grid">
+    <div class="hero-copy">
+      <div class="eyebrow">
+        <span class="dot"></span> Native macOS · Free · Open source
+      </div>
+      <h1>
+        Claude Code usage,<br>
+        <span class="grad">in your menu bar.</span>
+      </h1>
+      <p class="lede">
+        Live plan limits, today's spend, weekly cap, and per-model breakdown — pulled from your existing Claude Code login. Glance, never guess.
+      </p>
+      <div class="cta">
+        <a href="#install" class="btn btn-primary">Install with Homebrew</a>
+        <a href="https://github.com/bcollard/claude-status-macos-menu-bar" class="btn btn-ghost" target="_blank" rel="noopener">
+          Star on GitHub
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+            <path fill="currentColor" d="M8 .25a.75.75 0 01.673.418l1.882 3.815 4.21.612a.75.75 0 01.416 1.279l-3.046 2.97.719 4.192a.75.75 0 01-1.088.791L8 12.347l-3.766 1.98a.75.75 0 01-1.088-.79l.72-4.194L.818 6.374a.75.75 0 01.416-1.28l4.21-.611L7.327.668A.75.75 0 018 .25z"/>
+          </svg>
+        </a>
+      </div>
+      <ul class="hero-bullets">
+        <li>Reads from your existing macOS Keychain — no new login.</li>
+        <li>Local logs + opt-in API call. Your data stays on your Mac.</li>
+        <li>Pro, Max, Team, Enterprise. Pick a refresh cadence and forget it.</li>
+      </ul>
+    </div>
+
+    <div class="hero-visual">
+      <div class="macbar" role="presentation">
+        <span class="macbar-spacer"></span>
+        <span class="macbar-app">
+          <span class="macbar-asterisk">✱</span>
+          <span class="macbar-text" id="liveText">69% • $103.51</span>
+        </span>
+        <span class="macbar-clock">Thu&nbsp;14:45</span>
+      </div>
+
+      <div class="popup-stack" id="popupStack">
+        <picture>
+          <source srcset="assets/popup-enterprise-dark.png" media="(prefers-color-scheme: dark)">
+          <img class="popup popup-active" id="popupEnt" src="assets/popup-enterprise-light.png"
+               alt="Claude Status popup showing Enterprise plan with Extra Usage 69% and per-model breakdown">
+        </picture>
+        <picture>
+          <source srcset="assets/popup-pro-dark.png" media="(prefers-color-scheme: dark)">
+          <img class="popup" id="popupPro" src="assets/popup-pro-light.png"
+               alt="Claude Status popup showing Pro plan with 5-hour and weekly utilization">
+        </picture>
+      </div>
+
+      <div class="plan-switch" role="tablist" aria-label="Switch shown plan">
+        <button class="active" data-plan="enterprise" aria-selected="true">Enterprise</button>
+        <button data-plan="pro">Pro</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="section" id="features">
+  <div class="container">
+    <p class="kicker">Why</p>
+    <h2>One glance. Every number that matters.</h2>
+    <p class="section-lede">
+      Claude Code logs everything locally; Anthropic exposes per-plan usage via an OAuth endpoint. Claude Status stitches both together in a tiny native menu bar item.
+    </p>
+
+    <div class="feature-grid">
+      <article class="card">
+        <span class="card-num">01</span>
+        <h3>Reuses your Claude Code login</h3>
+        <p>Reads the OAuth token from the <code>Claude Code-credentials</code> Keychain entry. No new accounts, no API keys, no setup forms.</p>
+      </article>
+      <article class="card">
+        <span class="card-num">02</span>
+        <h3>Plan-aware</h3>
+        <p>Extra Usage in USD for Enterprise. Five-hour + weekly buckets for Pro &amp; Max. Same numbers as <em>claude.ai/settings/usage</em>.</p>
+      </article>
+      <article class="card">
+        <span class="card-num">03</span>
+        <h3>Per-model breakdown</h3>
+        <p>Stacked-bar charts split Opus, Sonnet, and Haiku spend across <em>today</em> and <em>this week</em>, with API-equivalent USD next to each.</p>
+      </article>
+      <article class="card">
+        <span class="card-num">04</span>
+        <h3>Local-first</h3>
+        <p>Token counts come from <code>~/.claude/projects/*.jsonl</code>. The Anthropic API call is opt-in and configurable; pick a refresh rate from 1&nbsp;min to manual.</p>
+      </article>
+      <article class="card">
+        <span class="card-num">05</span>
+        <h3>Native &amp; tiny</h3>
+        <p>Swift + SwiftUI MenuBarExtra. Around 1.5k lines. No Electron, no background daemons, no JavaScript runtime.</p>
+      </article>
+      <article class="card">
+        <span class="card-num">06</span>
+        <h3>Open source</h3>
+        <p>Auditable end-to-end. Distributed via a Homebrew cask. Ad-hoc signed today; notarized build coming with an Apple Developer ID.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt" id="screenshots">
+  <div class="container">
+    <p class="kicker">A closer look</p>
+    <h2>Built for the way you actually work.</h2>
+    <p class="section-lede">
+      The dropdown adapts to the data your plan exposes. Enterprise users see live <strong>$ spend</strong> against their monthly cap. Pro and Max users see their <strong>5-hour</strong> and <strong>weekly</strong> utilization.
+    </p>
+
+    <div class="gallery">
+      <figure>
+        <picture>
+          <source srcset="assets/popup-enterprise-dark.png" media="(prefers-color-scheme: dark)">
+          <img src="assets/popup-enterprise-light.png" alt="Enterprise dropdown" loading="lazy">
+        </picture>
+        <figcaption><strong>Enterprise.</strong> Watch <em>Extra Usage</em> tick up live against your monthly cap.</figcaption>
+      </figure>
+      <figure>
+        <picture>
+          <source srcset="assets/popup-pro-dark.png" media="(prefers-color-scheme: dark)">
+          <img src="assets/popup-pro-light.png" alt="Pro dropdown" loading="lazy">
+        </picture>
+        <figcaption><strong>Pro &amp; Max.</strong> Five-hour and weekly utilization with reset timers.</figcaption>
+      </figure>
+      <figure class="figure-wide">
+        <picture>
+          <source srcset="assets/settings-dark.png" media="(prefers-color-scheme: dark)">
+          <img src="assets/settings-light.png" alt="Settings window" loading="lazy">
+        </picture>
+        <figcaption><strong>Options.</strong> Pick how often the API gets polled — or turn it off entirely.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="how">
+  <div class="container">
+    <p class="kicker">How it works</p>
+    <h2>Three honest pieces of plumbing.</h2>
+
+    <ol class="steps">
+      <li>
+        <span class="step-num">1</span>
+        <h3>Keychain</h3>
+        <p>Reads the OAuth blob Claude Code wrote to <code>svce="Claude Code-credentials"</code>. Picks the freshest entry by <code>expiresAt</code> so a stale older login never wins.</p>
+      </li>
+      <li>
+        <span class="step-num">2</span>
+        <h3>Local logs</h3>
+        <p>Streams <code>~/.claude/projects/**/*.jsonl</code> line by line, filters by timestamp window, aggregates <em>input</em> / <em>output</em> / <em>cache-read</em> / <em>cache-write</em> per model.</p>
+      </li>
+      <li>
+        <span class="step-num">3</span>
+        <h3>OAuth usage API</h3>
+        <p><code>GET api.anthropic.com/api/oauth/usage</code> with the Bearer token. Honors <code>Retry-After</code> on 429s, keeps the last good value on the screen during backoff.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section class="section section-alt" id="install">
+  <div class="container">
+    <p class="kicker">Get it</p>
+    <h2>One Homebrew tap, two commands.</h2>
+
+    <div class="install-grid">
+      <div class="install-cmd">
+        <pre><code><span class="prompt">$</span> brew tap bcollard/tap
+<span class="prompt">$</span> brew install --cask claude-status</code></pre>
+        <button class="copy-btn" data-copy="brew tap bcollard/tap
+brew install --cask claude-status" aria-label="Copy install command">Copy</button>
+      </div>
+
+      <aside class="install-notes">
+        <p><strong>Or download</strong> the <code>.app</code> from <a href="https://github.com/bcollard/claude-status-macos-menu-bar/releases" target="_blank" rel="noopener">GitHub Releases</a>.</p>
+        <ul>
+          <li>Requires macOS 14 Sonoma or later.</li>
+          <li>Built for Apple Silicon (M-series).</li>
+          <li>Ad-hoc signed; right-click → Open on first launch.</li>
+          <li>First click prompts for Keychain access — choose <em>Always Allow</em>.</li>
+        </ul>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="privacy">
+  <div class="container">
+    <p class="kicker">Privacy</p>
+    <h2>Your data doesn't go anywhere it wouldn't already go.</h2>
+
+    <div class="privacy-grid">
+      <div class="priv-card">
+        <span class="check">✓</span>
+        <p><strong>No analytics, no telemetry.</strong> No third-party SDKs. The binary makes one HTTPS call: <code>api.anthropic.com/api/oauth/usage</code>, the same endpoint Claude Code calls.</p>
+      </div>
+      <div class="priv-card">
+        <span class="check">✓</span>
+        <p><strong>Local logs stay local.</strong> Session JSONL files are read in-process. We extract token counts; we never read the conversation content beyond <code>"usage": {…}</code> blocks.</p>
+      </div>
+      <div class="priv-card">
+        <span class="check">✓</span>
+        <p><strong>Keychain access is explicit.</strong> macOS prompts you on first launch to allow access to <code>Claude Code-credentials</code>. You can revoke it anytime via <em>Keychain Access</em>.</p>
+      </div>
+      <div class="priv-card">
+        <span class="check">✓</span>
+        <p><strong>API is opt-out.</strong> In <em>Options → Refresh</em>, pick <em>Manual only</em> to disable auto-polling entirely. The local-log charts still work.</p>
+      </div>
+      <div class="priv-card">
+        <span class="check">✓</span>
+        <p><strong>Source on GitHub.</strong> ~1.5k lines of Swift. Read it, audit it, fork it.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt" id="faq">
+  <div class="container">
+    <p class="kicker">FAQ</p>
+    <h2>Common questions.</h2>
+
+    <div class="faq-list">
+      <details>
+        <summary>Will it work on my plan?</summary>
+        <p>Yes for all current consumer/business plans: <strong>Pro</strong>, <strong>Max</strong>, <strong>Team</strong>, <strong>Enterprise</strong>. The dropdown adapts to the fields the API returns — Enterprise gets the Extra Usage row, Pro/Max get five-hour and weekly utilization.</p>
+      </details>
+      <details>
+        <summary>Will it cost anything?</summary>
+        <p>No. Claude Status is free and the source is open. There's no in-app purchase, no subscription, no "pro tier" to unlock.</p>
+      </details>
+      <details>
+        <summary>Does it have access to my conversations or files?</summary>
+        <p>No. It reads the <code>usage</code> blocks of <code>~/.claude/projects/*.jsonl</code> for token counts, and the OAuth blob in your Keychain. It never opens the rest of the message content.</p>
+      </details>
+      <details>
+        <summary>Will it get me rate-limited?</summary>
+        <p>No. The API is polled every 5 minutes by default. On <code>429 Too Many Requests</code> the app backs off, honors any <code>Retry-After</code> header, and shows the last known good numbers in the meantime.</p>
+      </details>
+      <details>
+        <summary>Can I disable the API call entirely?</summary>
+        <p>Yes. <em>Options → Refresh → Manual only</em>. The local-log charts (today / this week with per-model breakdown) keep working — only the plan-level rows go quiet.</p>
+      </details>
+      <details>
+        <summary>What macOS version do I need?</summary>
+        <p>macOS 14 Sonoma or later. The app uses <code>MenuBarExtra</code> and the new <code>SMAppService</code> launch-at-login API.</p>
+      </details>
+      <details>
+        <summary>Apple Silicon only?</summary>
+        <p>Today, yes — the release build is arm64. A universal (arm64 + x86_64) build is planned. Open an issue on GitHub if you need it sooner.</p>
+      </details>
+      <details>
+        <summary>Why not the Mac App Store?</summary>
+        <p>Reading another app's Keychain entry from inside the App Store sandbox would need a shared keychain access group entitlement that only Anthropic can grant. The Homebrew cask path avoids that.</p>
+      </details>
+      <details>
+        <summary>Pricing for "API-equivalent cost"?</summary>
+        <p>The dropdown shows what a given token mix <em>would</em> cost on the Anthropic API. On a plan, you're not actually billed per token — but the figure is a useful comparison. Rates are public list pricing.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container footer-grid">
+    <div>
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 64 64" width="22" height="22"><use href="assets/asterisk.svg#root"/></svg>
+        </span>
+        <strong>Claude Status</strong>
+      </div>
+      <p class="footer-tag">macOS menu bar for Claude Code usage.</p>
+    </div>
+    <div>
+      <h4>Project</h4>
+      <ul>
+        <li><a href="https://github.com/bcollard/claude-status-macos-menu-bar" target="_blank" rel="noopener">GitHub repo</a></li>
+        <li><a href="https://github.com/bcollard/claude-status-macos-menu-bar/releases" target="_blank" rel="noopener">Releases</a></li>
+        <li><a href="https://github.com/bcollard/claude-status-macos-menu-bar/issues" target="_blank" rel="noopener">Issues &amp; feedback</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Legal</h4>
+      <ul>
+        <li>Not affiliated with Anthropic.</li>
+        <li>Uses Apple SF Symbols (Apple license).</li>
+        <li>Anonymous demo data — no real account info displayed here.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="copy">© 2026 · Built with care · <a href="https://github.com/bcollard/claude-status-macos-menu-bar" target="_blank" rel="noopener">Audit the source</a></p>
+</footer>
+
+<script>
+  // Theme toggle (auto/light/dark cycle)
+  (function() {
+    const root = document.documentElement;
+    const btn = document.getElementById('themeToggle');
+    const stored = localStorage.getItem('cs-theme');
+    if (stored) root.setAttribute('data-theme', stored);
+
+    btn.addEventListener('click', () => {
+      const cur = root.getAttribute('data-theme') || 'auto';
+      const next = cur === 'auto' ? 'light' : cur === 'light' ? 'dark' : 'auto';
+      root.setAttribute('data-theme', next);
+      if (next === 'auto') localStorage.removeItem('cs-theme');
+      else localStorage.setItem('cs-theme', next);
+      swapPopupSrc();
+    });
+
+    // Match popup img src to current effective theme so the data-theme
+    // override beats the <picture> media query.
+    function effectiveScheme() {
+      const t = root.getAttribute('data-theme') || 'auto';
+      if (t !== 'auto') return t;
+      return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    function swapPopupSrc() {
+      const s = effectiveScheme();
+      document.querySelectorAll('img[data-light]').forEach(img => {
+        img.src = s === 'dark' ? img.dataset.dark : img.dataset.light;
+      });
+      // For plain <img> already inside <picture>, browser handles via source.
+      // Plan switch images use data-light/data-dark attributes below.
+    }
+
+    matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', swapPopupSrc);
+    swapPopupSrc();
+  })();
+
+  // Plan switch in the hero (Enterprise / Pro)
+  (function() {
+    const stack = document.getElementById('popupStack');
+    if (!stack) return;
+    const ent = document.getElementById('popupEnt');
+    const pro = document.getElementById('popupPro');
+    const live = document.getElementById('liveText');
+    document.querySelectorAll('.plan-switch button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const plan = btn.dataset.plan;
+        document.querySelectorAll('.plan-switch button').forEach(b => {
+          b.classList.toggle('active', b === btn);
+          b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
+        });
+        ent.classList.toggle('popup-active', plan === 'enterprise');
+        pro.classList.toggle('popup-active', plan === 'pro');
+        live.textContent = plan === 'enterprise' ? '69% • $103.51' : '5h 13% • wk 47%';
+      });
+    });
+  })();
+
+  // Live-text ticker — gentle illusion that the menu bar updates.
+  (function() {
+    const el = document.getElementById('liveText');
+    if (!el) return;
+    let value = 103.51;
+    setInterval(() => {
+      if (!el.textContent.startsWith('69%')) return; // only tick when on enterprise
+      value += Math.random() * 0.07;
+      const pct = Math.min(99, 69 + (value - 103.51) / 1.5);
+      el.textContent = pct.toFixed(0) + '% • $' + value.toFixed(2);
+    }, 4500);
+  })();
+
+  // Copy-to-clipboard for install command
+  (function() {
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(btn.dataset.copy);
+          const orig = btn.textContent;
+          btn.textContent = 'Copied!';
+          btn.classList.add('copied');
+          setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1200);
+        } catch (e) { /* clipboard not available */ }
+      });
+    });
+  })();
+</script>
+
+</body>
+</html>

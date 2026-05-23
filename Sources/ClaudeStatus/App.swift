@@ -5,13 +5,18 @@ struct ClaudeStatusApp: App {
     @StateObject private var store: UsageStore
 
     init() {
-        // CLI screenshot mode: `--screenshot <enterprise|pro> [outDir]`.
-        // Renders MenuView with anonymous demo data, writes PNG, exits.
+        // CLI screenshot mode.
+        // `--screenshot <kind> [outDir]` where kind is one of:
+        //   enterprise | pro                  (App-Store marketing canvas)
+        //   popup-enterprise | popup-pro      (dropdown only, transparent)
+        //   settings                          (Settings window)
+        //   all
+        // Writes PNGs and exits without launching the menu bar.
         let args = ProcessInfo.processInfo.arguments
         if let i = args.firstIndex(of: "--screenshot") {
-            let plan = (i + 1 < args.count) ? args[i + 1] : "enterprise"
+            let kind = (i + 1 < args.count) ? args[i + 1] : "all"
             let outDir = (i + 2 < args.count) ? args[i + 2] : "docs/screenshots"
-            ScreenshotMode.run(plan: plan, outDir: outDir)
+            ScreenshotMode.run(kind: kind, outDir: outDir)
         }
         _store = StateObject(wrappedValue: UsageStore())
     }

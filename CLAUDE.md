@@ -53,8 +53,15 @@ claude-status-macos-menu-bar/
 │   ├── MenuView.swift                  # dropdown UI (Swift Charts stacked bars)
 │   └── SettingsView.swift              # ⌘, window: toggles + API cadence picker
 ├── Casks/claude-status.rb              # Homebrew cask formula
+├── website/                            # claudestatus.runlocal.dev
+│   ├── index.html  styles.css          # single-page site, no framework
+│   ├── assets/                         # popup PNGs + favicon + OG image
+│   └── cicd/setup-gcp-wif.sh           # one-time GCP WIF setup
+├── .github/workflows/
+│   └── deploy-website.yaml             # push website/ → GCS bucket
 ├── scripts/
 │   ├── make_icon.swift                 # generates Resources/AppIcon.icns
+│   ├── screenshots.sh                  # generates all PNG variants
 │   └── release.sh                      # builds, zips, prints sha256
 ├── build.sh                            # builds .app bundle + ad-hoc signs
 └── .gitignore

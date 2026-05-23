@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://claudestatus.runlocal.dev/sitemap.xml
