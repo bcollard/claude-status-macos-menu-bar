@@ -6,17 +6,68 @@
 
   <title>Claude Status — macOS menu bar for Claude Code usage</title>
   <meta name="description" content="A tiny macOS menu bar app that monitors your Claude Code usage. Live plan limits, per-model breakdown, API-equivalent cost — without leaving the keyboard.">
-  <meta name="theme-color" content="#d97757">
+  <link rel="canonical" href="https://claudestatus.runlocal.dev/">
 
-  <meta property="og:title" content="Claude Status — Claude Code usage in your menu bar">
-  <meta property="og:description" content="Live spend, plan limits, per-model breakdown. Reuses your Claude Code login. Open source, free, native Swift.">
-  <meta property="og:image" content="https://claudestatus.runlocal.dev/assets/og-image.png">
-  <meta property="og:url" content="https://claudestatus.runlocal.dev/">
+  <meta name="theme-color" content="#d97757" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1a1613" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light dark">
+
+  <meta name="application-name" content="Claude Status">
+  <meta name="apple-mobile-web-app-title" content="Claude Status">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="author" content="Baptiste Collard">
+  <meta name="generator" content="hand-rolled HTML">
+  <meta name="robots" content="index, follow">
+
+  <!-- Open Graph / Facebook / Slack / Discord / iMessage / Telegram -->
   <meta property="og:type" content="website">
-  <meta name="twitter:card" content="summary_large_image">
+  <meta property="og:site_name" content="Claude Status">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:url" content="https://claudestatus.runlocal.dev/">
+  <meta property="og:title" content="Claude Status — Claude Code usage in your menu bar">
+  <meta property="og:description" content="Live plan limits, today's spend, weekly cap, per-model breakdown. Reuses your Claude Code login. Open source, free, native Swift.">
+  <meta property="og:image" content="https://claudestatus.runlocal.dev/assets/og-image.png">
+  <meta property="og:image:secure_url" content="https://claudestatus.runlocal.dev/assets/og-image.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Claude Status dropdown showing Extra Usage progress and per-model token breakdown.">
 
-  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
-  <link rel="stylesheet" href="styles.css">
+  <!-- Twitter / X large card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://claudestatus.runlocal.dev/">
+  <meta name="twitter:title" content="Claude Status — Claude Code usage in your menu bar">
+  <meta name="twitter:description" content="Live plan limits, today's spend, weekly cap, per-model breakdown. Reuses your Claude Code login. Open source, free, native Swift.">
+  <meta name="twitter:image" content="https://claudestatus.runlocal.dev/assets/og-image.png">
+  <meta name="twitter:image:alt" content="Claude Status dropdown showing Extra Usage progress and per-model token breakdown.">
+
+  <!-- Icons -->
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="alternate icon" type="image/png" href="/assets/favicon.svg">
+  <link rel="apple-touch-icon" href="/assets/favicon.svg">
+  <link rel="mask-icon" href="/assets/favicon.svg" color="#d97757">
+
+  <link rel="stylesheet" href="/styles.css">
+
+  <!-- Structured data (helps Google + some chat apps surface metadata) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Claude Status",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "macOS 14+",
+    "url": "https://claudestatus.runlocal.dev/",
+    "downloadUrl": "https://github.com/bcollard/claude-status-macos-menu-bar/releases",
+    "description": "A native macOS menu bar app that monitors Claude Code usage. Live plan limits, per-model breakdown, API-equivalent cost.",
+    "license": "https://github.com/bcollard/claude-status-macos-menu-bar/blob/main/LICENSE",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "softwareVersion": "0.1.0",
+    "image": "https://claudestatus.runlocal.dev/assets/og-image.png"
+  }
+  </script>
 </head>
 <body>
 

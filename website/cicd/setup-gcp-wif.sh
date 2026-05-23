@@ -15,12 +15,12 @@ PROJECT_ID="personal-218506"
 SA_NAME="gha-push-gcs-claudestatus"
 SA_EMAIL="${SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
 BUCKET="claudestatus.runlocal.dev"
-LOCATION="us-east1"                        # adjust if you want EU/asia
+LOCATION="europe-west1"                        # adjust if you want EU/asia
 WI_POOL="gitops-pool"                      # reused from the blog
 WI_PROVIDER="gh-provider"                  # reused from the blog
 GH_REPO_OWNER="bcollard"
 GH_REPO_NAME="claude-status-macos-menu-bar"
-BUCKET_ROLE="projects/${PROJECT_ID}/roles/wsvbucketadmin"   # reused custom role
+BUCKET_ROLE="projects/${PROJECT_ID}/roles/claudecodebucketadmin"   # reused custom role
 
 echo "→ Project: ${PROJECT_ID}"
 echo "→ Bucket:  gs://${BUCKET}  (will be created if missing)"
@@ -28,7 +28,20 @@ echo "→ SA:      ${SA_EMAIL}"
 echo "→ Repo:    github.com/${GH_REPO_OWNER}/${GH_REPO_NAME}"
 echo
 
-gcloud config set project "${PROJECT_ID}"
+gcloud config configurations activate perso >/dev/null
+# gcloud config set project "${PROJECT_ID}"
+
+# --- o. Create role similar to wsvbucketadmin ───────────────────────────────
+# (If you already have a bucket-admin role that grants these permissions, skip this.)
+if ! gcloud iam roles describe "claudecodebucketadmin" --project="${PROJECT_ID}" >/dev/null 2>&1; then
+  echo "→ Creating custom role ${BUCKET_ROLE}"
+  gcloud iam roles create "claudecodebucketadmin" --project="${PROJECT_ID}" \
+    --title="Claude Status bucket admin" \
+    --permissions="storage.buckets.get,storage.buckets.update,storage.objects.create,storage.objects.delete,storage.objects.get,storage.objects.list" \
+    --stage=GA
+else
+  echo "✓ Custom role ${BUCKET_ROLE} already exists (reusing)"
+fi
 
 # ── 1. Service account (idempotent) ───────────────────────────────────
 if ! gcloud iam service-accounts describe "${SA_EMAIL}" --project="${PROJECT_ID}" >/dev/null 2>&1; then
