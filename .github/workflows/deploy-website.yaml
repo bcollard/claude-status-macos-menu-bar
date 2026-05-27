@@ -39,9 +39,11 @@ jobs:
         run: gcloud info
 
       - name: Sync website/ → gs://${{ env.BUCKET }}
-        # -m for parallel; -r for recursive; -d to delete server-side files
-        # not present locally (true mirror).
-        run: gsutil -m rsync -r -d website gs://${BUCKET}
+        # -m parallel; -r recursive; -d mirror (delete server-side files
+        # not present locally). -x excludes ephemeral WIF credentials
+        # files (google-github-actions/auth writes gha-creds-*.json into
+        # $GITHUB_WORKSPACE) so they can never be published to the bucket.
+        run: gsutil -m rsync -r -d -x '(^|/)gha-creds-.*\.json$' website gs://${BUCKET}
 
       - name: Set cache control on static assets
         shell: bash
