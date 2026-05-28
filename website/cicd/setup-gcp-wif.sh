@@ -67,8 +67,7 @@ if ! gcloud storage buckets describe "gs://${BUCKET}" >/dev/null 2>&1; then
   gcloud storage buckets create "gs://${BUCKET}" \
     --project="${PROJECT_ID}" \
     --location="${LOCATION}" \
-    --uniform-bucket-level-access \
-    --public-access-prevention=inherited
+    --uniform-bucket-level-access
 else
   echo "✓ Bucket gs://${BUCKET} already exists"
 fi
