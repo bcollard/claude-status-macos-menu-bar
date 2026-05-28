@@ -14,6 +14,10 @@ struct MenuView: View {
         VStack(alignment: .leading, spacing: 10) {
             header
             Divider()
+            if store.claudeProcessCount > 0 {
+                activityBlock
+                Divider()
+            }
             planBlock
             Divider()
             usageBlock(title: "Today", window: store.today)
@@ -49,23 +53,45 @@ struct MenuView: View {
                     apiRow(r)
                 }
                 if let err = store.apiError {
-                    Text(err)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .opacity(0.75)
-                        .lineLimit(2)
-                        .padding(.top, 2)
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        Circle().fill(.red).frame(width: 5, height: 5)
+                        Text(err)
+                            .font(.caption2)
+                            .foregroundStyle(.red)
+                            .lineLimit(2)
+                    }
+                    .padding(.top, 2)
                 }
             } else if store.apiUsage != nil {
                 Text("No plan-level usage data for this account.")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             } else if let err = store.apiError {
-                Text(err)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(3)
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Circle().fill(.red).frame(width: 5, height: 5)
+                    Text(err)
+                        .font(.caption2)
+                        .foregroundStyle(.red)
+                        .lineLimit(3)
+                }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var activityBlock: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Activity").font(.subheadline.bold())
+            HStack(alignment: .firstTextBaseline) {
+                Text("Active sessions").foregroundStyle(.secondary)
+                Spacer()
+                Text("\(store.claudeProcessCount)")
+                    .font(.callout.monospacedDigit())
+                Text(formatBytes(store.claudeProcessMemoryBytes))
+                    .font(.callout.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+            .font(.callout)
         }
     }
 
@@ -91,11 +117,18 @@ struct MenuView: View {
                 Text(headerSubtitle).font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
+            if store.apiHasIssue {
+                Circle()
+                    .fill(.red)
+                    .frame(width: 8, height: 8)
+                    .help(store.apiError ?? "Can't sync with Claude API")
+                    .accessibilityLabel("API sync issue")
+            }
             if screenshotMode {
                 Image(systemName: "arrow.clockwise").foregroundStyle(.secondary)
             } else {
                 Button {
-                    Task { await store.refresh() }
+                    Task { await store.refresh(manual: true) }
                 } label: {
                     Image(systemName: "arrow.clockwise")
                 }

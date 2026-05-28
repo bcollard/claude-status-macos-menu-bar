@@ -18,6 +18,19 @@ final class UsageStore: ObservableObject {
     @Published var apiUsage: UsageAPIResponse?
     @Published var apiError: String?
 
+    @Published var claudeProcessCount: Int = 0
+    @Published var claudeProcessMemoryBytes: UInt64 = 0
+
+    /// True when the last `/api/oauth/usage` attempt failed (rate-limit,
+    /// expired token, network error, etc.) or we're inside a 429 backoff
+    /// window. Drives the red dot in the popup header.
+    var apiHasIssue: Bool {
+        if apiError != nil { return true }
+        if let until = apiBackoffUntil, until > Date() { return true }
+        if let exp = tokenExpiresAt, exp <= Date() { return true }
+        return false
+    }
+
     @Published var showCountInMenuBar: Bool {
         didSet { UserDefaults.standard.set(showCountInMenuBar, forKey: Self.kShowCount) }
     }
@@ -91,12 +104,13 @@ final class UsageStore: ObservableObject {
     }
 
     private func loadAPI(force: Bool = false) async {
-        // Throttle: skip if we fetched recently or we're on backoff.
-        if !force {
-            if let until = apiBackoffUntil, until > Date() { return }
-            if let last = apiLastFetchedAt,
-               Date().timeIntervalSince(last) < apiRefreshInterval { return }
-        }
+        // Server-mandated backoff (429 Retry-After) is always respected
+        // — hammering during a 429 just extends the lockout.
+        if let until = apiBackoffUntil, until > Date() { return }
+        // Time-based throttle is only for the timer; a manual refresh
+        // (force=true) bypasses it so the button actually does something.
+        if !force, let last = apiLastFetchedAt,
+           Date().timeIntervalSince(last) < apiRefreshInterval { return }
 
         do {
             let creds = try KeychainReader.read()
@@ -143,7 +157,7 @@ final class UsageStore: ObservableObject {
         return formatTokens(n)
     }
 
-    func refresh() async {
+    func refresh(manual: Bool = false) async {
         guard !isRefreshing else { return }
         isRefreshing = true
         defer { isRefreshing = false }
@@ -170,7 +184,13 @@ final class UsageStore: ObservableObject {
         }
 
         loadAccount()
-        await loadAPI()
+        await loadAPI(force: manual)
+
+        let procInfo: ClaudeProcessInfo = await Task.detached(priority: .utility) {
+            ProcessScanner.scanClaudeProcesses()
+        }.value
+        claudeProcessCount = procInfo.count
+        claudeProcessMemoryBytes = procInfo.totalRSSBytes
     }
 }
 

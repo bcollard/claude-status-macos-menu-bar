@@ -35,18 +35,48 @@ struct ClaudeCredentials {
 enum KeychainReader {
     static let service = "Claude Code-credentials"
 
-    /// Claude Code may leave multiple entries under the same service name
-    /// (older logins under acct=<username>, newer SSO logins under
-    /// acct=<email>, plus transitional acct=claude-code-user entries).
+    /// Canonical credential location on macOS is the Keychain (Claude
+    /// Code may leave multiple entries under the same service name —
+    /// older logins under acct=<username>, newer SSO under acct=<email>,
+    /// transitional acct=claude-code-user). Linux/Docker/dotfile setups
+    /// can leave a `~/.claude/.credentials.json` file instead; we read
+    /// that as a fallback so users in those configurations aren't stuck
+    /// on "(not logged in)".
     ///
-    /// We do a two-step query because macOS returns `errSecParam (-50)` when
-    /// `kSecMatchLimitAll` is combined with `kSecReturnData: true`:
-    ///   1. List all matching entries with attributes only (sorted by mdat).
-    ///   2. For each, freshest first, fetch the data via a single-account
-    ///      query and parse. Return the first non-expired one. If none are
-    ///      valid, fall back to the freshest parseable entry so the UI can
-    ///      still show identity + plan.
+    /// We do a two-step Keychain query because macOS returns
+    /// `errSecParam (-50)` when `kSecMatchLimitAll` is combined with
+    /// `kSecReturnData: true`:
+    ///   1. List all matching entries with attributes only.
+    ///   2. For each, fetch the data via a single-account query.
+    ///
+    /// All viable candidates (Keychain entries + file) are pooled, then
+    /// we pick the one with the latest `expiresAt`. If none are still
+    /// valid, the freshest expired entry is returned so the UI can show
+    /// identity + plan and explain the expiration.
     static func read() throws -> ClaudeCredentials {
+        var candidates: [ClaudeCredentials] = []
+        var lastError: Error?
+
+        do {
+            candidates.append(contentsOf: try readKeychainEntries())
+        } catch {
+            lastError = error
+        }
+        if let fileCreds = readFileEntry() {
+            candidates.append(fileCreds)
+        }
+
+        // Drop entries without an access token — useless to UsageAPIClient.
+        let usable = candidates.filter { ($0.accessToken?.isEmpty == false) }
+        let sorted = usable.sorted {
+            ($0.expiresAt ?? .distantPast) > ($1.expiresAt ?? .distantPast)
+        }
+        if let fresh = sorted.first(where: { !$0.isExpired }) { return fresh }
+        if let stale = sorted.first { return stale }
+        throw lastError ?? KeychainError.notFound
+    }
+
+    private static func readKeychainEntries() throws -> [ClaudeCredentials] {
         let listQuery: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -55,7 +85,7 @@ enum KeychainReader {
         ]
         var item: AnyObject?
         let status = SecItemCopyMatching(listQuery as CFDictionary, &item)
-        if status == errSecItemNotFound { throw KeychainError.notFound }
+        if status == errSecItemNotFound { return [] }
         guard status == errSecSuccess else { throw KeychainError.status(status) }
 
         let entries: [[String: Any]]
@@ -63,27 +93,21 @@ enum KeychainReader {
         else if let one = item as? [String: Any] { entries = [one] }
         else { throw KeychainError.decodeFailed }
 
-        let sorted = entries.sorted {
-            let da = ($0[kSecAttrModificationDate as String] as? Date) ?? .distantPast
-            let db = ($1[kSecAttrModificationDate as String] as? Date) ?? .distantPast
-            return da > db
-        }
-
-        var fallback: ClaudeCredentials?
-        var lastError: Error?
-        for entry in sorted {
+        var result: [ClaudeCredentials] = []
+        for entry in entries {
             guard let acct = entry[kSecAttrAccount as String] as? String else { continue }
-            do {
-                let data = try fetchData(account: acct)
-                guard let creds = parse(account: acct, data: data) else { continue }
-                if !creds.isExpired { return creds }
-                if fallback == nil { fallback = creds }
-            } catch {
-                lastError = error
+            guard let data = try? fetchData(account: acct) else { continue }
+            if let creds = parse(account: acct, data: data) {
+                result.append(creds)
             }
         }
-        if let f = fallback { return f }
-        throw lastError ?? KeychainError.notFound
+        return result
+    }
+
+    private static func readFileEntry() -> ClaudeCredentials? {
+        let path = ("~/.claude/.credentials.json" as NSString).expandingTildeInPath
+        guard let data = try? Data(contentsOf: URL(fileURLWithPath: path)) else { return nil }
+        return parse(account: "credentials.json", data: data)
     }
 
     private static func fetchData(account: String) throws -> Data {
