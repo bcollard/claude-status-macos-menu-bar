@@ -1,0 +1,16 @@
+format_version = 3
+
+[apps.ClaudeStatus]
+identifier = "com.bcollard.claudestatus"
+product = "ClaudeStatus"
+version = "0.1.0"
+category = "public.app-category.developer-tools"
+icon = "Resources/AppIcon.icns"
+
+[apps.ClaudeStatus.plist]
+CFBundleDisplayName = "Claude Status"
+CFBundleName = "Claude Status"
+NSHumanReadableCopyright = "Copyright © 2026 Baptiste Collard. All rights reserved."
+LSMinimumSystemVersion = "14.0"
+NSHighResolutionCapable = true
+LSUIElement = true

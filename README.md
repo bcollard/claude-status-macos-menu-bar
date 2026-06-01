@@ -35,7 +35,7 @@ brew tap bcollard/tap
 brew install --cask claude-status
 ```
 
-Or grab the latest `.app` from the [Releases](https://github.com/bcollard/claude-status-macos-menu-bar/releases) page.
+Or grab the latest `.dmg` from the [Releases](https://github.com/bcollard/claude-status-macos-menu-bar/releases) page.
 
 Requirements:
 
@@ -43,7 +43,7 @@ Requirements:
 - Apple Silicon (universal build coming)
 - An active Claude Code login (the app reads from its Keychain entry)
 
-The app is ad-hoc signed today; on first launch right-click → **Open** to bypass Gatekeeper. Notarized build is planned once a Developer ID is in place.
+The release build is signed with a Developer ID and notarized by Apple, so Gatekeeper opens it without warnings.
 
 ## Screenshots
 
@@ -117,12 +117,12 @@ The local-log scan runs every 60 s regardless and is not user-configurable (file
 ```bash
 git clone https://github.com/bcollard/claude-status-macos-menu-bar
 cd claude-status-macos-menu-bar
-./build.sh                                # → .build/Claude Status.app (ad-hoc signed)
-cp -R ".build/Claude Status.app" /Applications/
-open "/Applications/Claude Status.app"
+./build.sh                                                # → .build/bundler/apps/ClaudeStatus/ClaudeStatus.app (ad-hoc signed)
+cp -R .build/bundler/apps/ClaudeStatus/ClaudeStatus.app /Applications/
+open /Applications/ClaudeStatus.app
 ```
 
-Requires Xcode (for the Swift toolchain). macOS 14 SDK or newer.
+Requires Xcode (for the Swift toolchain) and [swift-bundler](https://github.com/stackotter/swift-bundler). macOS 14 SDK or newer.
 
 ### Regenerating screenshots
 
@@ -134,10 +134,20 @@ Outputs marketing canvases (2880×1800) to `docs/screenshots/` and clean popup +
 
 ### Cutting a release
 
+Bump `version` in `Bundler.toml` and `Casks/claude-status.rb`, then:
+
 ```bash
-./scripts/release.sh 0.2.0
-# → .build/release/ClaudeStatus-0.2.0.zip
+./scripts/release.sh
+# → .build/bundler/apps/ClaudeStatus/ClaudeStatus.{zip,dmg}
+# → signed with Developer ID, notarized + stapled, ready for upload
 # → prints sha256 to paste into the cask formula
+```
+
+The script requires a `notarytool` keychain profile (default `claude-status-notary`):
+
+```bash
+xcrun notarytool store-credentials claude-status-notary \
+  --apple-id you@example.com --team-id YOURTEAMID --password <app-specific-password>
 ```
 
 ## Limitations
