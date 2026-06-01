@@ -31,7 +31,7 @@ Claude Code logs every assistant turn locally in `~/.claude/projects/**/*.jsonl`
 ## Install
 
 ```bash
-brew tap bcollard/tap
+brew tap bcollard/claude-status
 brew install --cask claude-status
 ```
 

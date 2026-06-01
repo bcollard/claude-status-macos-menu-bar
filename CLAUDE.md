@@ -458,7 +458,7 @@ flag (which notarization requires).
 3. **Users install via:**
 
    ```bash
-   brew tap bcollard/tap
+   brew tap bcollard/claude-status
    brew install --cask claude-status
    ```
 

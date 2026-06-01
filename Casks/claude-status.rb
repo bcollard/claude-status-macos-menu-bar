@@ -1,7 +1,6 @@
 cask "claude-status" do
   version "0.1.0"
-  # Replace with the sha256 printed at the end of scripts/release.sh.
-  sha256 "0000000000000000000000000000000000000000000000000000000000000000"
+  sha256 "f7eed5693844da2e0f1151ae9326ee2d12903ab510710df735af882297d7d5e8"
 
   url "https://github.com/bcollard/claude-status-macos-menu-bar/releases/download/v#{version}/ClaudeStatus.dmg"
   name "Claude Status"
