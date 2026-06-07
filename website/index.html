@@ -319,39 +319,39 @@ brew install --cask claude-status" aria-label="Copy install command">Copy</butto
 
     <div class="faq-list">
       <details>
-        <summary>Will it work on my plan?</summary>
+        <summary><span>Will it work on my plan?</span></summary>
         <p>Yes for all current consumer/business plans: <strong>Pro</strong>, <strong>Max</strong>, <strong>Team</strong>, <strong>Enterprise</strong>. The dropdown adapts to the fields the API returns — Enterprise gets the Extra Usage row, Pro/Max get five-hour and weekly utilization.</p>
       </details>
       <details>
-        <summary>Will it cost anything?</summary>
+        <summary><span>Will it cost anything?</span></summary>
         <p>No. Claude Status is free and the source is open. There's no in-app purchase, no subscription, no "pro tier" to unlock.</p>
       </details>
       <details>
-        <summary>Does it have access to my conversations or files?</summary>
+        <summary><span>Does it have access to my conversations or files?</span></summary>
         <p>No. It reads the <code>usage</code> blocks of <code>~/.claude/projects/*.jsonl</code> for token counts, and the OAuth blob in your Keychain. It never opens the rest of the message content.</p>
       </details>
       <details>
-        <summary>Will it get me rate-limited?</summary>
+        <summary><span>Will it get me rate-limited?</span></summary>
         <p>No. The API is polled every 5 minutes by default. On <code>429 Too Many Requests</code> the app backs off, honors any <code>Retry-After</code> header, and shows the last known good numbers in the meantime.</p>
       </details>
       <details>
-        <summary>Can I disable the API call entirely?</summary>
+        <summary><span>Can I disable the API call entirely?</span></summary>
         <p>Yes. <em>Options → Refresh → Manual only</em>. The local-log charts (today / this week with per-model breakdown) keep working — only the plan-level rows go quiet.</p>
       </details>
       <details>
-        <summary>What macOS version do I need?</summary>
+        <summary><span>What macOS version do I need?</span></summary>
         <p>macOS 14 Sonoma or later. The app uses <code>MenuBarExtra</code> and the new <code>SMAppService</code> launch-at-login API.</p>
       </details>
       <details>
-        <summary>Apple Silicon only?</summary>
+        <summary><span>Apple Silicon only?</span></summary>
         <p>Today, yes — the release build is arm64. A universal (arm64 + x86_64) build is planned. Open an issue on GitHub if you need it sooner.</p>
       </details>
       <details>
-        <summary>Why not the Mac App Store?</summary>
+        <summary><span>Why not the Mac App Store?</span></summary>
         <p>Reading another app's Keychain entry from inside the App Store sandbox would need a shared keychain access group entitlement that only Anthropic can grant. The Homebrew cask path avoids that.</p>
       </details>
       <details>
-        <summary>Pricing for "API-equivalent cost"?</summary>
+        <summary><span>Pricing for "API-equivalent cost"?</span></summary>
         <p>The dropdown shows what a given token mix <em>would</em> cost on the Anthropic API. On a plan, you're not actually billed per token — but the figure is a useful comparison. Rates are public list pricing.</p>
       </details>
     </div>
