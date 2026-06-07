@@ -151,12 +151,57 @@ The OAuth blob stored by Claude Code:
 `KeychainReader` extracts all of the above. Plan name and rate-limit tier
 come **straight from this blob — no API call required**.
 
-**Multiple entries — pick the freshest.** Claude Code can leave several
-generic-password items under `svce="Claude Code-credentials"` distinguished
-by `acct`:
-- `acct=<username>` (older logins, e.g. `jdoe`)
-- `acct=claude-code-user` (transitional bootstrap entry)
-- `acct=<email>` (current SSO logins, e.g. `you@example.com`)
+**Multiple entries — pick the freshest.** Claude Code derives the `acct`
+field of the generic-password item by sanitizing the OS-side username.
+From the binary (verified in `/opt/homebrew/Caskroom/claude-code/<version>/claude`,
+around offset 194 MB):
+
+```js
+function Hk() {
+  let H;
+  try { H = process.env.USER || os.userInfo().username }
+  catch { H = "claude-code-user" }
+  if (!pE1.test(H)) return "claude-code-user";
+  return H;
+}
+// pE1 = /^[a-zA-Z0-9._-]+$/
+```
+
+So the `acct` is `$USER` (or `os.userInfo().username` if `$USER` is
+unset), **but only if it matches `^[a-zA-Z0-9._-]+$`**. Any username
+containing characters outside that set — most importantly `@` — fails
+the regex and Claude Code falls back to the literal `claude-code-user`.
+
+Practical consequence on **SSO-bound Macs** where `$USER` is the full
+email (e.g. `you@example.com`): the `@` fails the regex, so every
+`/login` and every token refresh lands in `acct=claude-code-user`, not
+`acct=you@example.com`. The seemingly-related `acct=you@example.com`
+row in such a Keychain was written by an **older Claude Code build**
+that did not yet sanitize, and is no longer touched.
+
+Typical entries seen accumulated on one Mac under
+`svce="Claude Code-credentials"`:
+- `acct=<short-username>` — written before SSO renamed the OS user to
+  an email. Stale; nothing rewrites it.
+- `acct=<email>` — written by an older Claude Code build without the
+  regex check. Stale; nothing rewrites it on current versions.
+- `acct=claude-code-user` — the live row on email-style-`$USER` Macs.
+  Also the fallback if `$USER` is genuinely unset.
+
+**The blob is the same identity across all fresh entries.** Claude Code
+only persists one logged-in Anthropic identity at a time. A `/login` or
+token refresh writes the blob to whichever `acct` slot the *current
+process* resolves to. The `acct` is purely an OS-side label; it does
+not select between Pro / Max / Enterprise accounts. (Confirmed by
+logging out of Enterprise and back in with Pro: the same
+`acct=claude-code-user` row was deleted and recreated with the new
+`subscriptionType: pro` blob.)
+
+**OAuth tokens have an ~8 hour TTL** — `mdat` on the fresh entry sits
+exactly 8 h before its `expiresAt`. A Keychain row touched today usually
+reflects an in-session token refresh, not a fresh `/login`. A `cdat`
+that equals `mdat` is the signal that the row was actually deleted and
+recreated (i.e. an explicit logout/login).
 
 `KeychainReader.read()` uses a **two-step query** because macOS returns
 `errSecParam (-50)` when `kSecMatchLimitAll` is combined with
@@ -343,26 +388,53 @@ If all matching entries are expired, `UsageAPIClient` throws
 `tokenExpired` and the dropdown shows
 `Keychain token expired N days ago. Open Claude Code to refresh.`
 
-### 2. Notch overflow on MacBook Pro
+### 2. Repeated Keychain password prompts
+
+Every macOS generic-password item carries a **partition list** — an ACL
+keyed by code-signing Team ID (or the binary's hash for ad-hoc-signed
+apps). Clicking "Always Allow" extends the partition list of the
+*specific item* you were prompted for; it does not grant blanket trust
+to your app.
+
+Two things keep firing the prompt:
+
+- **Claude Code can write a *new* generic-password item** (different
+  `kSecAttrAccount`) on `claude /logout` + re-login or SSO re-bootstrap
+  — see "Multiple entries — pick the freshest" above. Each fresh item
+  starts with a partition list that only trusts Anthropic's Team ID, so
+  the freshest entry `KeychainReader.read()` picks has never been
+  authorized for Claude Status. New prompt.
+- **The ad-hoc `./build.sh` binary's identity is its hash**, not a Team
+  ID. Every rebuild changes the hash → all previously-granted ACLs no
+  longer apply. The notarized DMG sidesteps this: a stable Developer ID
+  Team ID across releases means each "Always Allow" sticks per Keychain
+  item until Claude Code next rewrites it.
+
+The only clean fix is on Anthropic's side — when persisting
+`claudeAiOauth`, write the partition list with an allowlist of trusted
+observer Team IDs (or use the `apple:` wildcard for "any signed app").
+Nothing we can do unilaterally.
+
+### 3. Notch overflow on MacBook Pro
 
 On notched displays the menu bar overflows behind the notch. The icon is
 there but invisible. Workarounds: ⌘-drag menu bar items to reorder, quit
 one other menu bar app, or toggle off **Show token count in menu bar** in
 the dropdown to reclaim space.
 
-### 3. Pricing is a maintenance hot spot
+### 4. Pricing is a maintenance hot spot
 
 `Pricing.swift` hardcodes per-million-token rates for Opus / Sonnet /
 Haiku. Update when Anthropic publishes new pricing. On plan-based accounts
 the cost figure is **API-equivalent**, not what you pay.
 
-### 4. App Store distribution would require sandboxing
+### 5. App Store distribution would require sandboxing
 
 Reading another app's Keychain entry from inside the sandbox needs a
 shared keychain access group entitlement that we can't get without
 Anthropic's cooperation. Stick with the cask path.
 
-### 5. Enterprise plan specifics
+### 6. Enterprise plan specifics
 
 The Keychain blob reports `rateLimitTier: default_claude_zero` for an
 Enterprise account — pools are admin-managed and there's no per-user

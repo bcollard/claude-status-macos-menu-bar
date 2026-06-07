@@ -153,6 +153,7 @@ xcrun notarytool store-credentials claude-status-notary \
 ## Limitations
 
 - **Token refresh.** Claude Code refreshes OAuth tokens in-memory and doesn't always write back to the Keychain. If the API rows go quiet, run `claude /logout` then re-login to mint a fresh Keychain entry.
+- **Repeated Keychain password prompts.** macOS binds "Always Allow" to a specific Keychain item via its partition list (an ACL keyed by code-signing Team ID). When Claude Code writes a fresh credential item — e.g. after `claude /logout` + re-login or an SSO re-bootstrap — the new item has no prior authorization for Claude Status, so macOS prompts again. The notarized DMG keeps Claude Status's Team ID stable across releases; an ad-hoc `./build.sh` rebuild also invalidates previous trust because each binary hash is its own identity. A clean fix would need Anthropic to write the credential with an allowlist of trusted observer Team IDs.
 - **Notch overflow.** On notched MacBooks the menu bar can hide our icon behind the notch. Workarounds: ⌘-drag to reorder, quit another menu-bar app, or toggle off **Show token count in menu bar**.
 - **Pricing maintenance.** `Pricing.swift` hardcodes per-million-token rates. Update when Anthropic publishes new pricing.
 - **Not in the App Store.** Reading another app's Keychain entry from inside the App Store sandbox would need a shared keychain access group entitlement only Anthropic can grant. Homebrew cask avoids that.
