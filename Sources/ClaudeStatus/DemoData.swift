@@ -13,6 +13,8 @@ enum DemoData {
         s.rateLimitTier = "default_claude_zero"
         s.tokenExpiresAt = Date().addingTimeInterval(6 * 3600)
         s.lastRefreshed = Date()
+        s.claudeProcessCount = 4
+        s.claudeProcessMemoryBytes = 2_180_000_000
 
         s.today = UsageWindow(
             byModel: [
@@ -89,6 +91,8 @@ enum DemoData {
         s.rateLimitTier = "default_claude_ai"
         s.tokenExpiresAt = Date().addingTimeInterval(7 * 3600)
         s.lastRefreshed = Date()
+        s.claudeProcessCount = 2
+        s.claudeProcessMemoryBytes = 980_000_000
 
         s.today = UsageWindow(
             byModel: [
