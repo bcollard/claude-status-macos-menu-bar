@@ -69,6 +69,7 @@ img { max-width: 100%; display: block; }
 
 code, pre { font-family: var(--mono); font-size: 0.92em; }
 code { background: var(--bg-alt); padding: 0.12em 0.4em; border-radius: 6px; border: 1px solid var(--border); }
+pre code { background: none; padding: 0; border: 0; border-radius: 0; }
 
 /* ---------- Nav ---------- */
 .nav {
