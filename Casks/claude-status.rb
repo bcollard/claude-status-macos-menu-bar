@@ -4,16 +4,14 @@ cask "claude-status" do
 
   url "https://github.com/bcollard/claude-status-macos-menu-bar/releases/download/v#{version}/ClaudeStatus.dmg"
   name "Claude Status"
-  desc "macOS menu bar app that monitors Claude Code usage"
+  desc "Menu bar app that monitors Claude Code usage"
   homepage "https://github.com/bcollard/claude-status-macos-menu-bar"
 
   depends_on macos: :sonoma
 
   app "ClaudeStatus.app"
 
-  zap trash: [
-    "~/Library/Preferences/com.bcollard.claudestatus.plist",
-  ]
+  zap trash: "~/Library/Preferences/com.bcollard.claudestatus.plist"
 
   caveats <<~EOS
     Claude Status reads your Claude Code OAuth credentials from the macOS Keychain
