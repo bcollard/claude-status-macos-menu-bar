@@ -531,8 +531,15 @@ flag (which notarization requires).
 
    ```bash
    brew tap bcollard/claude-status
+   brew trust --tap bcollard/claude-status   # Homebrew 6.0+ gates third-party taps
    brew install --cask claude-status
    ```
+
+   Homebrew 6.0 turned on `HOMEBREW_REQUIRE_TAP_TRUST` by default: a
+   non-official tap's casks won't load until the user runs `brew trust`
+   (stored in `~/.homebrew/trust.json`, or `$XDG_CONFIG_HOME/homebrew/trust.json`).
+   Existing installs tapped before 6.0 keep working without it; only fresh
+   installs hit the gate. Disable globally with `HOMEBREW_NO_REQUIRE_TAP_TRUST`.
 
 To ship a new version: bump `version` in `Bundler.toml` and in
 `Casks/claude-status.rb`, run `scripts/release.sh`, update `sha256`

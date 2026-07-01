@@ -269,13 +269,15 @@
 <section class="section section-alt" id="install">
   <div class="container">
     <p class="kicker">Get it</p>
-    <h2>One Homebrew tap, two commands.</h2>
+    <h2>One Homebrew tap, three commands.</h2>
 
     <div class="install-grid">
       <div class="install-cmd">
         <pre><code><span class="prompt">$</span> brew tap bcollard/claude-status
+<span class="prompt">$</span> brew trust --tap bcollard/claude-status
 <span class="prompt">$</span> brew install --cask claude-status</code></pre>
         <button class="copy-btn" data-copy="brew tap bcollard/claude-status
+brew trust --tap bcollard/claude-status
 brew install --cask claude-status" aria-label="Copy install command">Copy</button>
       </div>
 
@@ -285,6 +287,7 @@ brew install --cask claude-status" aria-label="Copy install command">Copy</butto
           <li>Requires macOS 14 Sonoma or later.</li>
           <li>Built for Apple Silicon (M-series).</li>
           <li>Signed with a Developer ID and notarized by Apple — no Gatekeeper warning.</li>
+          <li><code>brew trust</code> is required on Homebrew 6.0+, which requires third-party taps to be trusted before install.</li>
           <li>First click prompts for Keychain access — choose <em>Always Allow</em>.</li>
         </ul>
       </aside>
