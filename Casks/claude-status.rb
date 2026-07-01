@@ -7,7 +7,7 @@ cask "claude-status" do
   desc "macOS menu bar app that monitors Claude Code usage"
   homepage "https://github.com/bcollard/claude-status-macos-menu-bar"
 
-  depends_on macos: ">= :sonoma"
+  depends_on macos: :sonoma
 
   app "ClaudeStatus.app"
 
