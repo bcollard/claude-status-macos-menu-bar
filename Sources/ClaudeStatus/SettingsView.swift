@@ -6,6 +6,22 @@ struct SettingsView: View {
     var screenshotMode: Bool = false
 
     var body: some View {
+        // The screenshot renderer drives this view through ImageRenderer,
+        // which has no running NSApplication and lays a TabView out blank.
+        if screenshotMode {
+            generalPane.frame(width: 480, height: 380)
+        } else {
+            TabView {
+                generalPane
+                    .tabItem { Label("General", systemImage: "gearshape") }
+                DiagnosticsView()
+                    .tabItem { Label("Diagnostics", systemImage: "stethoscope") }
+            }
+            .frame(width: 520, height: 440)
+        }
+    }
+
+    private var generalPane: some View {
         Form {
             Section("General") {
                 if screenshotMode {
@@ -68,7 +84,6 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 480, height: 380)
     }
 
     @ViewBuilder

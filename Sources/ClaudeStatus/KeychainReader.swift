@@ -17,6 +17,54 @@ enum KeychainError: Error, CustomStringConvertible {
     }
 }
 
+/// One credential candidate as surfaced by the read-only Diagnostics pane.
+/// Deliberately carries **no token material** — only metadata a user needs
+/// to decide whether an entry is stale.
+struct KeychainEntryDiagnostic: Identifiable, Sendable {
+    enum Source: String, Sendable {
+        case keychain = "Keychain"
+        case file = "File"
+    }
+
+    let id: String
+    let account: String
+    let source: Source
+    /// Filesystem path, for `.file` entries.
+    let path: String?
+    let createdAt: Date?
+    let modifiedAt: Date?
+    let expiresAt: Date?
+    let subscriptionType: String?
+    let hasAccessToken: Bool
+    /// Set when the payload could not be fetched or parsed — most often
+    /// because this app was never authorized for that Keychain item.
+    let readError: String?
+    /// True for the single candidate `KeychainReader.read()` would return.
+    var isSelected: Bool = false
+
+    var isExpired: Bool {
+        guard let expiresAt else { return false }
+        return expiresAt < Date()
+    }
+
+    /// Shell command that removes this entry. Nil for the file source and
+    /// for entries with no usable account attribute.
+    var removalCommand: String? {
+        switch source {
+        case .file:
+            guard let path else { return nil }
+            return "rm \(Self.shellQuote(path))"
+        case .keychain:
+            return "security delete-generic-password -s \(Self.shellQuote(KeychainReader.service)) "
+                 + "-a \(Self.shellQuote(account))"
+        }
+    }
+
+    private static func shellQuote(_ s: String) -> String {
+        "'" + s.replacingOccurrences(of: "'", with: "'\\''") + "'"
+    }
+}
+
 struct ClaudeCredentials {
     let account: String
     let accessToken: String?
@@ -66,17 +114,33 @@ enum KeychainReader {
             candidates.append(fileCreds)
         }
 
-        // Drop entries without an access token — useless to UsageAPIClient.
-        let usable = candidates.filter { ($0.accessToken?.isEmpty == false) }
-        let sorted = usable.sorted {
-            ($0.expiresAt ?? .distantPast) > ($1.expiresAt ?? .distantPast)
-        }
-        if let fresh = sorted.first(where: { !$0.isExpired }) { return fresh }
-        if let stale = sorted.first { return stale }
+        if let picked = best(candidates, credentials: { $0 }) { return picked }
         throw lastError ?? KeychainError.notFound
     }
 
-    private static func readKeychainEntries() throws -> [ClaudeCredentials] {
+    /// Single source of truth for "which candidate wins". Generic over the
+    /// element type so `diagnose()` can rank `(id, credentials)` pairs with
+    /// the exact same rule `read()` applies — the panel can never disagree
+    /// with what the app actually uses.
+    ///
+    /// Entries without an access token are dropped (useless to
+    /// `UsageAPIClient`); the rest sort by `expiresAt` descending, and the
+    /// first non-expired one wins. If none are still valid we fall back to
+    /// the freshest expired entry so the UI can show identity + plan and
+    /// explain the expiration.
+    static func best<T>(_ items: [T], credentials: (T) -> ClaudeCredentials) -> T? {
+        let sorted = items
+            .filter { credentials($0).accessToken?.isEmpty == false }
+            .sorted {
+                (credentials($0).expiresAt ?? .distantPast)
+                    > (credentials($1).expiresAt ?? .distantPast)
+            }
+        return sorted.first(where: { !credentials($0).isExpired }) ?? sorted.first
+    }
+
+    /// Attributes-only listing. Does **not** read payloads, so it never
+    /// triggers a Keychain authorization prompt.
+    private static func listEntryAttributes() throws -> [[String: Any]] {
         let listQuery: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -88,13 +152,14 @@ enum KeychainReader {
         if status == errSecItemNotFound { return [] }
         guard status == errSecSuccess else { throw KeychainError.status(status) }
 
-        let entries: [[String: Any]]
-        if let arr = item as? [[String: Any]] { entries = arr }
-        else if let one = item as? [String: Any] { entries = [one] }
-        else { throw KeychainError.decodeFailed }
+        if let arr = item as? [[String: Any]] { return arr }
+        if let one = item as? [String: Any] { return [one] }
+        throw KeychainError.decodeFailed
+    }
 
+    private static func readKeychainEntries() throws -> [ClaudeCredentials] {
         var result: [ClaudeCredentials] = []
-        for entry in entries {
+        for entry in try listEntryAttributes() {
             guard let acct = entry[kSecAttrAccount as String] as? String else { continue }
             guard let data = try? fetchData(account: acct) else { continue }
             if let creds = parse(account: acct, data: data) {
@@ -104,8 +169,90 @@ enum KeychainReader {
         return result
     }
 
+    /// Read-only inventory of every credential candidate, for the
+    /// Diagnostics pane. Never deletes or writes anything.
+    ///
+    /// This issues exactly the same queries `read()` already runs on every
+    /// refresh, so it adds no new Keychain prompt surface — but unlike
+    /// `read()` it keeps entries whose payload could not be fetched or
+    /// parsed, recording the reason instead of silently skipping them.
+    static func diagnose() -> [KeychainEntryDiagnostic] {
+        var entries: [KeychainEntryDiagnostic] = []
+        var candidates: [(id: String, creds: ClaudeCredentials)] = []
+
+        for attrs in (try? listEntryAttributes()) ?? [] {
+            let acct = attrs[kSecAttrAccount as String] as? String ?? ""
+            let id = "keychain:\(acct)"
+            var expiresAt: Date?
+            var subscriptionType: String?
+            var hasAccessToken = false
+            var readError: String?
+
+            do {
+                let data = try fetchData(account: acct)
+                if let creds = parse(account: acct, data: data) {
+                    candidates.append((id, creds))
+                    expiresAt = creds.expiresAt
+                    subscriptionType = creds.subscriptionType
+                    hasAccessToken = creds.accessToken?.isEmpty == false
+                } else {
+                    readError = "payload is not recognizable Claude OAuth JSON"
+                }
+            } catch {
+                readError = "\(error)"
+            }
+
+            entries.append(KeychainEntryDiagnostic(
+                id: id,
+                account: acct.isEmpty ? "(no account)" : acct,
+                source: .keychain,
+                path: nil,
+                createdAt: attrs[kSecAttrCreationDate as String] as? Date,
+                modifiedAt: attrs[kSecAttrModificationDate as String] as? Date,
+                expiresAt: expiresAt,
+                subscriptionType: subscriptionType,
+                hasAccessToken: hasAccessToken,
+                readError: readError
+            ))
+        }
+
+        let filePath = (credentialsFilePath as NSString).expandingTildeInPath
+        if FileManager.default.fileExists(atPath: filePath) {
+            let id = "file:\(filePath)"
+            let creds = readFileEntry()
+            if let creds { candidates.append((id, creds)) }
+            let fileAttrs = try? FileManager.default.attributesOfItem(atPath: filePath)
+            entries.append(KeychainEntryDiagnostic(
+                id: id,
+                account: (filePath as NSString).lastPathComponent,
+                source: .file,
+                path: filePath,
+                createdAt: fileAttrs?[.creationDate] as? Date,
+                modifiedAt: fileAttrs?[.modificationDate] as? Date,
+                expiresAt: creds?.expiresAt,
+                subscriptionType: creds?.subscriptionType,
+                hasAccessToken: creds?.accessToken?.isEmpty == false,
+                readError: creds == nil ? "file is not recognizable Claude OAuth JSON" : nil
+            ))
+        }
+
+        let winner = best(candidates, credentials: { $0.creds })?.id
+        return entries
+            .map { e in
+                var e = e
+                e.isSelected = (e.id == winner)
+                return e
+            }
+            .sorted { a, b in
+                if a.isSelected != b.isSelected { return a.isSelected }
+                return (a.modifiedAt ?? .distantPast) > (b.modifiedAt ?? .distantPast)
+            }
+    }
+
+    static let credentialsFilePath = "~/.claude/.credentials.json"
+
     private static func readFileEntry() -> ClaudeCredentials? {
-        let path = ("~/.claude/.credentials.json" as NSString).expandingTildeInPath
+        let path = (credentialsFilePath as NSString).expandingTildeInPath
         guard let data = try? Data(contentsOf: URL(fileURLWithPath: path)) else { return nil }
         return parse(account: "credentials.json", data: data)
     }

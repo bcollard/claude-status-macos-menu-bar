@@ -51,7 +51,8 @@ claude-status-macos-menu-bar/
 │   ├── Pricing.swift                   # per-million-token price table + cost calc
 │   ├── LaunchAtLogin.swift             # SMAppService wrapper
 │   ├── MenuView.swift                  # dropdown UI (Swift Charts stacked bars)
-│   └── SettingsView.swift              # ⌘, window: toggles + API cadence picker
+│   ├── SettingsView.swift              # ⌘, window: TabView — General + Diagnostics
+│   └── DiagnosticsView.swift           # read-only credential inventory pane
 ├── Casks/claude-status.rb              # Homebrew cask formula
 ├── website/                            # claudestatus.runlocal.dev
 │   ├── index.html  styles.css          # single-page site, no framework
@@ -365,6 +366,36 @@ you can actually hit; raw token counts don't.
 `<email>'s Organization` — we detect that by string-containment and fall
 back to `<email> · <plan-name>` (e.g. `you@example.com · Pro`).
 
+### Diagnostics pane
+
+**Options… → Diagnostics** lists every credential candidate the app
+considers: each `svce="Claude Code-credentials"` Keychain item plus
+`~/.claude/.credentials.json`. Per entry it shows the account, source,
+plan, `expiresAt` (valid / expired), `cdat`/`mdat`, whether an access
+token is present, and an **In use** badge on the one `read()` selected.
+
+Design constraints, deliberately:
+
+- **Read-only.** No delete button. Stale entries are already inert —
+  `read()` ranks by `expiresAt` and skips token-less entries, so an
+  obsolete item can never win. The destructive step stays in the user's
+  shell: each non-selected row offers a **Copy removal command** button
+  yielding `security delete-generic-password -s … -a …`. Adding
+  `SecItemDelete` would also need `kSecACLAuthorizationDelete` on items
+  the app was never authorized for (see Known Limitations §2), so it
+  would fire a fresh password prompt per entry anyway.
+- **No token material** is displayed or copied, including in the
+  **Copy report** output.
+- **No new prompt surface.** `diagnose()` issues exactly the queries
+  `read()` already runs each refresh. The listing itself
+  (`listEntryAttributes()`, attributes-only) never prompts; only the
+  per-entry payload fetch does. Entries whose payload can't be fetched
+  render as *Not readable* with the reason instead of being skipped.
+
+`KeychainReader.best(_:credentials:)` is the single ranking rule, generic
+over the element type so `read()` and `diagnose()` cannot diverge — the
+pane can't claim one entry is in use while the app uses another.
+
 ---
 
 ## Known limitations
@@ -599,8 +630,9 @@ the .icns app icon are independent — changing one doesn't affect the other.
   variants (`seven_day_opus`, `seven_day_sonnet`) those are already in the
   bucket list and will render automatically.
 
-- **Diagnostics view.** A hidden "Show raw Keychain blob" / "Show raw
-  /usage response" panel for debugging.
+- **Diagnostics view — raw `/usage` response.** The Keychain half shipped
+  (see "Diagnostics pane" above); a "Show raw /usage response" panel is
+  still open.
 
 - **Tooltip / popover with detail.** Today/Week now collapse to a stacked
   bar + legend; raw Input/Output/CacheRead/CacheCreate counts are still in
