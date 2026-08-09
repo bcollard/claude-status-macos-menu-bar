@@ -3,7 +3,7 @@ format_version = 3
 [apps.ClaudeStatus]
 identifier = "com.bcollard.claudestatus"
 product = "ClaudeStatus"
-version = "0.1.0"
+version = "0.1.1"
 category = "public.app-category.developer-tools"
 icon = "Resources/AppIcon.icns"
 
