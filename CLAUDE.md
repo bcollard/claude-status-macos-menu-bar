@@ -550,12 +550,15 @@ flag (which notarization requires).
 
 2. **Update the cask in your tap.** Paste the DMG sha256 printed at the
    end of `release.sh` into `Casks/claude-status.rb`, then sync to the
-   `homebrew-tap` repo:
+   tap repo. The tap is **`bcollard/homebrew-claude-status`** — the name
+   `brew tap bcollard/claude-status` resolves to (there is no
+   `bcollard/homebrew-tap`):
 
    ```bash
-   git clone https://github.com/bcollard/homebrew-tap /tmp/homebrew-tap
-   cp Casks/claude-status.rb /tmp/homebrew-tap/Casks/
-   cd /tmp/homebrew-tap && git add -A && git commit -m "claude-status 0.1.0" && git push
+   gh repo clone bcollard/homebrew-claude-status /tmp/tap
+   cp Casks/claude-status.rb /tmp/tap/Casks/
+   brew style /tmp/tap/Casks/claude-status.rb
+   cd /tmp/tap && git add -A && git commit -m "claude-status 0.1.1" && git push
    ```
 
 3. **Users install via:**
