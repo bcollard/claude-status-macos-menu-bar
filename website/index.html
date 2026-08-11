@@ -201,7 +201,17 @@
       <article class="card">
         <span class="card-num">06</span>
         <h3>Open source</h3>
-        <p>Auditable end-to-end. Distributed via a Homebrew cask. Ad-hoc signed today; notarized build coming with an Apple Developer ID.</p>
+        <p>Auditable end-to-end. Distributed via a Homebrew cask, signed with an Apple Developer ID and notarized by Apple.</p>
+      </article>
+      <article class="card card-wide">
+        <span class="card-num">07</span>
+        <h3>Diagnostics that explain themselves</h3>
+        <p>
+          Claude Code can leave several <code>Claude Code-credentials</code> entries in your Keychain — an old one from before a username change, another from an older build. Claude Status picks the one with the latest expiry, and the <strong>Diagnostics</strong> tab shows you exactly which that was, alongside every entry it considered.
+        </p>
+        <p>
+          It's strictly read-only: the app never writes to your Keychain and has no delete button. Stale entries are harmless, so if you'd rather tidy up, each unused row hands you the exact <code>security delete-generic-password</code> command to run yourself. No token is ever displayed or copied.
+        </p>
       </article>
     </div>
   </div>
@@ -236,6 +246,13 @@
           <img src="assets/settings-light.png" alt="Settings window" loading="lazy">
         </picture>
         <figcaption><strong>Options.</strong> Pick how often the API gets polled — or turn it off entirely.</figcaption>
+      </figure>
+      <figure class="figure-wide">
+        <picture>
+          <source srcset="assets/diagnostics-dark.png" media="(prefers-color-scheme: dark)">
+          <img src="assets/diagnostics-light.png" alt="Diagnostics tab listing Keychain credential entries" loading="lazy">
+        </picture>
+        <figcaption><strong>Diagnostics.</strong> Every credential entry the app can see, which one it picked, and why the others lost.</figcaption>
       </figure>
     </div>
   </div>
@@ -350,6 +367,14 @@ brew install --cask claude-status" aria-label="Copy install command">Copy</butto
       <details>
         <summary><span>Can I disable the API call entirely?</span></summary>
         <p>Yes. <em>Options → Refresh → Manual only</em>. The local-log charts (today / this week with per-model breakdown) keep working — only the plan-level rows go quiet.</p>
+      </details>
+      <details>
+        <summary><span>It says my token expired, but I just logged in.</span></summary>
+        <p>Open <em>Options → Diagnostics</em>. Claude Code can leave several <code>Claude Code-credentials</code> entries in your Keychain, and the tab shows every one it found, each entry's expiry, and which one is <strong>In use</strong>. Claude Code also refreshes tokens in memory without always writing them back, so a <code>claude /logout</code> followed by a fresh login is the reliable way to write a new entry.</p>
+      </details>
+      <details>
+        <summary><span>Can it clean up old Keychain entries for me?</span></summary>
+        <p>Deliberately not. Extra entries are inert — the app picks the one with the latest expiry, so a stale entry can never win — and removing the wrong one would log you out of Claude Code. Instead, each unused row in <em>Diagnostics</em> gives you the exact <code>security delete-generic-password</code> command, so the destructive step stays in your own shell.</p>
       </details>
       <details>
         <summary><span>What macOS version do I need?</span></summary>

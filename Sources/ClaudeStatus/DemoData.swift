@@ -82,6 +82,53 @@ enum DemoData {
         return s
     }
 
+    /// Anonymous credential inventory for the Diagnostics screenshot.
+    /// Deliberately shows all three interesting states at once: the live
+    /// entry, a stale one left behind by an old login, and one this app was
+    /// never authorized to read.
+    static func diagnostics() -> [KeychainEntryDiagnostic] {
+        let day: TimeInterval = 86_400
+        return [
+            KeychainEntryDiagnostic(
+                id: "keychain:claude-code-user",
+                account: "claude-code-user",
+                source: .keychain,
+                path: nil,
+                createdAt: Date().addingTimeInterval(-45 * day),
+                modifiedAt: Date().addingTimeInterval(-2 * 3600),
+                expiresAt: Date().addingTimeInterval(6 * 3600),
+                subscriptionType: "enterprise",
+                hasAccessToken: true,
+                readError: nil,
+                isSelected: true
+            ),
+            KeychainEntryDiagnostic(
+                id: "keychain:casey",
+                account: "casey",
+                source: .keychain,
+                path: nil,
+                createdAt: Date().addingTimeInterval(-210 * day),
+                modifiedAt: Date().addingTimeInterval(-92 * day),
+                expiresAt: Date().addingTimeInterval(-92 * day),
+                subscriptionType: "pro",
+                hasAccessToken: true,
+                readError: nil
+            ),
+            KeychainEntryDiagnostic(
+                id: "keychain:casey@acme.io",
+                account: "casey@acme.io",
+                source: .keychain,
+                path: nil,
+                createdAt: Date().addingTimeInterval(-180 * day),
+                modifiedAt: Date().addingTimeInterval(-120 * day),
+                expiresAt: nil,
+                subscriptionType: nil,
+                hasAccessToken: false,
+                readError: "authorization denied"
+            ),
+        ]
+    }
+
     static func proStore() -> UsageStore {
         let s = UsageStore(demo: true)
         s.account = "Sam"

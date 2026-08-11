@@ -8,6 +8,12 @@ enum ScreenshotMode {
     static let canvasWidth: CGFloat = 1440
     static let canvasHeight: CGFloat = 900
 
+    /// Version string painted into the About row of the Settings mimic.
+    /// The screenshot binary runs outside an .app bundle, so there's no
+    /// Info.plist to read — keep this in step with `version` in
+    /// Bundler.toml (the release checklist calls it out).
+    static let displayVersion = "v0.1.1 (1)"
+
     /// Render screenshots with anonymous demo data.
     ///   kind = enterprise | pro            (full-canvas App-Store gallery)
     ///        | popup-enterprise | popup-pro (just the dropdown card)
@@ -20,8 +26,8 @@ enum ScreenshotMode {
         let kinds: [String]
         switch rawKind.lowercased() {
         case "all":
-            kinds = ["enterprise", "pro", "popup-enterprise", "popup-pro", "settings"]
-        case let s where ["enterprise", "pro", "popup-enterprise", "popup-pro", "settings"].contains(s):
+            kinds = ["enterprise", "pro", "popup-enterprise", "popup-pro", "settings", "diagnostics"]
+        case let s where ["enterprise", "pro", "popup-enterprise", "popup-pro", "settings", "diagnostics"].contains(s):
             kinds = [s]
         default:
             FileHandle.standardError.write(Data("unknown kind: \(rawKind)\n".utf8))
@@ -35,6 +41,7 @@ enum ScreenshotMode {
             case "popup-enterprise": renderPopup(planKey: "enterprise",     outDir: outDir)
             case "popup-pro":        renderPopup(planKey: "pro",            outDir: outDir)
             case "settings":         renderSettings(outDir: outDir)
+            case "diagnostics":      renderDiagnostics(outDir: outDir)
             default: break
             }
         }
@@ -115,6 +122,23 @@ enum ScreenshotMode {
         }
     }
 
+    private static func renderDiagnostics(outDir: String) {
+        for scheme: ColorScheme in [.light, .dark] {
+            let suffix = scheme == .light ? "light" : "dark"
+            let outURL = URL(fileURLWithPath: outDir)
+                .appendingPathComponent("diagnostics-\(suffix).png")
+
+            let view = StaticDiagnosticsView(
+                entries: DemoData.diagnostics(),
+                scheme: scheme
+            )
+            .padding(40)
+            .environment(\.colorScheme, scheme)
+
+            writePNG(view: view, to: outURL, opaque: false)
+        }
+    }
+
     // MARK: - Renderer plumbing
 
     private static func writePNG<V: View>(view: V, to outURL: URL, opaque: Bool) {
@@ -147,6 +171,7 @@ private struct StaticSettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
+            SettingsTabStrip(active: .general, scheme: scheme)
             section(header: "General") {
                 row { Text("Launch at login") } trailing: { toggle(on: true) }
                 divider
@@ -164,7 +189,7 @@ private struct StaticSettingsView: View {
 
             section(header: "About") {
                 row { Text("Claude Status") } trailing: {
-                    Text("v0.1.0 (1)").monospacedDigit().foregroundStyle(.secondary)
+                    Text(ScreenshotMode.displayVersion).monospacedDigit().foregroundStyle(.secondary)
                 }
                 divider
                 row { Text("Account") } trailing: {
@@ -264,6 +289,173 @@ private struct StaticSettingsView: View {
                       ? Color(white: 0.26)
                       : Color(white: 0.94))
         )
+    }
+}
+
+/// macOS-style Settings tab strip. Hand-rolled for the same reason as
+/// `StaticSettingsView` — a real `TabView` lays out blank through
+/// `ImageRenderer`.
+private struct SettingsTabStrip: View {
+    enum Tab { case general, diagnostics }
+    let active: Tab
+    let scheme: ColorScheme
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Spacer()
+            tab("General", systemImage: "gearshape", isActive: active == .general)
+            tab("Diagnostics", systemImage: "stethoscope", isActive: active == .diagnostics)
+            Spacer()
+        }
+        .padding(.bottom, 2)
+    }
+
+    private func tab(_ title: String, systemImage: String, isActive: Bool) -> some View {
+        VStack(spacing: 3) {
+            Image(systemName: systemImage)
+                .font(.system(size: 17, weight: .regular))
+            Text(title).font(.system(size: 11))
+        }
+        .foregroundStyle(isActive
+                         ? (scheme == .dark ? Color.white : Color.black)
+                         : Color.secondary)
+        .frame(width: 100)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(isActive
+                      ? (scheme == .dark ? Color(white: 0.30) : Color(white: 0.86))
+                      : Color.clear)
+        )
+    }
+}
+
+/// Hand-rolled mimic of `DiagnosticsView` for ImageRenderer.
+private struct StaticDiagnosticsView: View {
+    let entries: [KeychainEntryDiagnostic]
+    let scheme: ColorScheme
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            SettingsTabStrip(active: .diagnostics, scheme: scheme)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Credential entries").font(.headline)
+                VStack(spacing: 0) {
+                    ForEach(Array(entries.enumerated()), id: \.element.id) { idx, e in
+                        if idx > 0 { divider }
+                        row(e)
+                    }
+                }
+                .padding(.vertical, 8)
+                .padding(.horizontal, 14)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(scheme == .dark ? Color(white: 0.18) : Color.white)
+                )
+                Text("""
+                     Claude Status reads these and never writes to the Keychain. \
+                     It uses the entry with the latest expiry — the one marked In use. \
+                     Extra entries are inert.
+                     """)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 4)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(width: 480)
+        .padding(.vertical, 28)
+        .padding(.horizontal, 28)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(scheme == .dark
+                      ? Color(red: 0.13, green: 0.13, blue: 0.14)
+                      : Color(red: 0.94, green: 0.94, blue: 0.96))
+                .shadow(color: .black.opacity(0.25), radius: 26, x: 0, y: 12)
+        )
+    }
+
+    @ViewBuilder
+    private func row(_ e: KeychainEntryDiagnostic) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 6) {
+                Text(e.account).font(.system(.body, design: .monospaced))
+                if e.isSelected {
+                    Text("IN USE")
+                        .font(.caption2.weight(.semibold))
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
+                        .background(Capsule().fill(Color.accentColor.opacity(0.18)))
+                        .foregroundStyle(Color.accentColor)
+                }
+                Spacer()
+                Text(e.source.rawValue).font(.caption).foregroundStyle(.secondary)
+            }
+
+            status(e)
+
+            Text("Created \(Self.short(e.createdAt)) · Modified \(Self.short(e.modifiedAt))")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            if let plan = e.subscriptionType {
+                Text("Plan \(plan.capitalized)").font(.caption).foregroundStyle(.secondary)
+            }
+
+            if !e.isSelected {
+                HStack(spacing: 6) {
+                    Text("Copy removal command")
+                        .font(.caption)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(
+                            RoundedRectangle(cornerRadius: 5)
+                                .fill(scheme == .dark ? Color(white: 0.30) : Color(white: 0.93))
+                        )
+                    Text("not used by Claude Status")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.top, 1)
+            }
+        }
+        .padding(.vertical, 9)
+    }
+
+    @ViewBuilder
+    private func status(_ e: KeychainEntryDiagnostic) -> some View {
+        if let err = e.readError {
+            label("Not readable — \(err)",
+                  systemImage: "lock.trianglebadge.exclamationmark", tint: .orange)
+        } else if let exp = e.expiresAt, e.isExpired {
+            label("Expired \(Self.short(exp))", systemImage: "xmark.circle.fill", tint: .red)
+        } else if let exp = e.expiresAt {
+            label("Valid until \(Self.short(exp))", systemImage: "checkmark.circle.fill", tint: .green)
+        } else {
+            label("No expiry in payload", systemImage: "questionmark.circle", tint: .secondary)
+        }
+    }
+
+    private func label(_ text: String, systemImage: String, tint: Color) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: systemImage).imageScale(.small)
+            Text(text)
+        }
+        .font(.caption)
+        .foregroundStyle(tint)
+    }
+
+    private var divider: some View {
+        Rectangle().fill(Color.gray.opacity(0.18)).frame(height: 1)
+    }
+
+    private static func short(_ d: Date?) -> String {
+        guard let d else { return "—" }
+        let f = DateFormatter()
+        f.dateStyle = .medium
+        f.timeStyle = .short
+        return f.string(from: d)
     }
 }
 

@@ -24,6 +24,7 @@ mkdir -p website/assets
 .build/release/ClaudeStatus --screenshot popup-enterprise website/assets
 .build/release/ClaudeStatus --screenshot popup-pro        website/assets
 .build/release/ClaudeStatus --screenshot settings         website/assets
+.build/release/ClaudeStatus --screenshot diagnostics      website/assets
 
 echo
 echo "✓ Marketing screenshots:"
