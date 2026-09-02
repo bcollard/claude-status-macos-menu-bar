@@ -440,11 +440,33 @@ Two things keep firing the prompt:
   longer apply. The notarized DMG sidesteps this: a stable Developer ID
   Team ID across releases means each "Always Allow" sticks per Keychain
   item until Claude Code next rewrites it.
+- **Even on the signed release build, the *same* item can keep
+  re-prompting.** Confirmed on an SSO-bound Mac (`cdat` days old,
+  `mdat` updated every few hours — the item is being updated in place,
+  not recreated): Claude Code's write path appears to reset the
+  partition list on every in-place update, on whatever cadence its SSO
+  session forces a token refresh. A stable app signature doesn't help
+  here because the ACL gets narrowed again after each write, not
+  because ClaudeStatus's identity changed.
 
 The only clean fix is on Anthropic's side — when persisting
 `claudeAiOauth`, write the partition list with an allowlist of trusted
 observer Team IDs (or use the `apple:` wildcard for "any signed app").
 Nothing we can do unilaterally.
+
+**Opt-in dirty workaround:** `scripts/install-keychain-workaround.sh`
+installs a LaunchAgent that runs `security
+set-generic-password-partition-list` every 10 minutes to re-add
+ClaudeStatus's Team ID (`teamid:PZARL6555S`) to the item's partition
+list, so the "Always Allow" grant sticks despite the resets above. It
+is **not** run by `build.sh` or the app — opt in explicitly. It works
+by storing your login keychain password in its own separate, dedicated
+Keychain item (`svce=ClaudeStatus-keychain-unlock`) so the LaunchAgent
+can call `security` unattended; that password is passed to `security`
+as a `-k` command-line argument on every run, which is transiently
+visible to other local processes on the Mac (e.g. via `ps`) — a real,
+if narrow, tradeoff versus just clicking "Allow" every few hours.
+Remove everything it sets up with `scripts/uninstall-keychain-workaround.sh`.
 
 ### 3. Notch overflow on MacBook Pro
 
