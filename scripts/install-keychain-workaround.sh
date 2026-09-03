@@ -65,6 +65,7 @@ chmod +x "$SCRIPT_DEST"
 sed \
     -e "s#__SCRIPT_PATH__#$SCRIPT_DEST#g" \
     -e "s#__LOG_DIR__#$LOG_DIR#g" \
+    -e "s#__KEYCHAIN_DB__#$KEYCHAIN#g" \
     "$REPO_DIR/LaunchAgents/com.bcollard.claudestatus.keychainfix.plist.template" \
     >"$PLIST_DEST"
 

@@ -456,17 +456,29 @@ Nothing we can do unilaterally.
 
 **Opt-in dirty workaround:** `scripts/install-keychain-workaround.sh`
 installs a LaunchAgent that runs `security
-set-generic-password-partition-list` every 10 minutes to re-add
-ClaudeStatus's Team ID (`teamid:PZARL6555S`) to the item's partition
-list, so the "Always Allow" grant sticks despite the resets above. It
-is **not** run by `build.sh` or the app — opt in explicitly. It works
-by storing your login keychain password in its own separate, dedicated
-Keychain item (`svce=ClaudeStatus-keychain-unlock`) so the LaunchAgent
-can call `security` unattended; that password is passed to `security`
-as a `-k` command-line argument on every run, which is transiently
-visible to other local processes on the Mac (e.g. via `ps`) — a real,
-if narrow, tradeoff versus just clicking "Allow" every few hours.
-Remove everything it sets up with `scripts/uninstall-keychain-workaround.sh`.
+set-generic-password-partition-list` to re-add ClaudeStatus's Team ID
+(`teamid:PZARL6555S`) to the item's partition list, so the "Always
+Allow" grant sticks despite the resets above. It is **not** run by
+`build.sh` or the app — opt in explicitly. It works by storing your
+login keychain password in its own separate, dedicated Keychain item
+(`svce=ClaudeStatus-keychain-unlock`) so the LaunchAgent can call
+`security` unattended; that password is passed to `security` as a
+`-k` command-line argument on every run, which is transiently visible
+to other local processes on the Mac (e.g. via `ps`) — a real, if
+narrow, tradeoff versus just clicking "Allow" every few hours. Remove
+everything it sets up with `scripts/uninstall-keychain-workaround.sh`.
+
+The job is triggered by `WatchPaths` on `login.keychain-db` itself (any
+write to the keychain file re-runs it within seconds), with a 10-minute
+`StartInterval` as a fallback and `RunAtLoad` to catch up after
+login/wake. A first version used only the 10-minute poll and still
+left a real gap: confirmed in practice when Claude Code rewrote the
+item's ACL during an overnight background wake at 03:59, the next poll
+wasn't due for several more minutes, and ClaudeStatus's own 60s refresh
+loop hit the reset ACL first on the next real wake — one prompt, even
+with the LaunchAgent installed and running cleanly. `WatchPaths` closes
+that window to roughly the time between the write and the next
+runloop tick, not the next poll interval.
 
 ### 3. Notch overflow on MacBook Pro
 
