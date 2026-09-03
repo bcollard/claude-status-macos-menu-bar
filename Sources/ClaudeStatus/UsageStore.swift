@@ -21,6 +21,10 @@ final class UsageStore: ObservableObject {
     @Published var claudeProcessCount: Int = 0
     @Published var claudeProcessMemoryBytes: UInt64 = 0
 
+    /// True when Keychain automation is enabled but has no password yet —
+    /// drives the setup banner in the dropdown.
+    @Published private(set) var keychainAutomationNeedsSetup: Bool = false
+
     /// True when the last `/api/oauth/usage` attempt failed (rate-limit,
     /// expired token, network error, etc.) or we're inside a 429 backoff
     /// window. Drives the red dot in the popup header.
@@ -161,6 +165,14 @@ final class UsageStore: ObservableObject {
         guard !isRefreshing else { return }
         isRefreshing = true
         defer { isRefreshing = false }
+
+        // Re-grant this app's Keychain trust *before* reading the item
+        // ourselves below, so a reset since the last cycle never causes
+        // our own read to trigger the OS prompt.
+        _ = await Task.detached(priority: .utility) {
+            KeychainAutomation.applyFix()
+        }.value
+        keychainAutomationNeedsSetup = KeychainAutomation.isEnabled && !KeychainAutomation.hasStoredSecret
 
         let cal = Calendar.current
         let now = Date()

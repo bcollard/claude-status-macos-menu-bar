@@ -3,6 +3,9 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject var store: UsageStore
     @ObservedObject private var launch = LaunchAtLogin.shared
+    @StateObject private var automation = KeychainAutomationModel()
+    @State private var automationPassword = ""
+    @State private var automationSaveError: String?
     var screenshotMode: Bool = false
 
     var body: some View {
@@ -67,6 +70,61 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
+            Section {
+                if screenshotMode {
+                    staticToggle("Keep Claude Code Keychain access working automatically", isOn: true)
+                } else {
+                    Toggle("Keep Claude Code Keychain access working automatically",
+                           isOn: Binding(
+                               get: { automation.isEnabled },
+                               set: { automation.setEnabled($0) }
+                           ))
+
+                    if automation.isEnabled {
+                        if automation.hasSecret {
+                            HStack {
+                                Text(automation.statusDescription)
+                                    .font(.caption)
+                                    .foregroundStyle(automation.lastErrorDescription == nil ? Color.secondary : Color.red)
+                                    .lineLimit(2)
+                                Spacer()
+                                Button("Forget Stored Password") { automation.forget() }
+                                    .controlSize(.small)
+                            }
+                        } else {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("Enter your Mac login password once. It's stored in your Keychain, readable only by Claude Status, and used to re-grant its own Keychain permission automatically.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                SecureField("Login password", text: $automationPassword)
+                                    .textFieldStyle(.roundedBorder)
+                                HStack {
+                                    Button("Save") {
+                                        if let error = automation.save(password: automationPassword) {
+                                            automationSaveError = error
+                                        } else {
+                                            automationSaveError = nil
+                                            automationPassword = ""
+                                            Task { await store.refresh(manual: true) }
+                                        }
+                                    }
+                                    .disabled(automationPassword.isEmpty)
+                                    if let error = automationSaveError {
+                                        Text(error).font(.caption).foregroundStyle(.red)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } header: {
+                Text("Keychain Automation")
+            } footer: {
+                Text("Claude Code periodically rewrites its saved login, which normally makes macOS ask for permission again every few hours. This works around that — see the project's CLAUDE.md for exactly how, including the tradeoffs.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("About") {
                 LabeledContent("Claude Status") {
                     Text(Self.versionString)
@@ -84,6 +142,7 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
+        .onAppear { automation.refresh() }
     }
 
     @ViewBuilder

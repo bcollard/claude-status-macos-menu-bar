@@ -61,10 +61,33 @@ final class DiagnosticsModel: ObservableObject {
 /// a `/login`), so the destructive step stays in the user's own shell.
 struct DiagnosticsView: View {
     @StateObject private var model = DiagnosticsModel()
+    @StateObject private var automation = KeychainAutomationModel()
     @State private var copiedID: String?
 
     var body: some View {
         Form {
+            Section {
+                HStack {
+                    Text(automation.isEnabled ? "Enabled" : "Disabled")
+                        .foregroundStyle(automation.isEnabled ? .green : .secondary)
+                    Spacer()
+                    Text(automation.statusDescription)
+                        .font(.caption)
+                        .foregroundStyle(automation.lastErrorDescription == nil ? Color.secondary : Color.red)
+                        .lineLimit(2)
+                }
+                if automation.hasSecret {
+                    Button("Forget Stored Password") { automation.forget() }
+                        .controlSize(.small)
+                }
+            } header: {
+                Text("Keychain Automation")
+            } footer: {
+                Text("Re-applies this app's Keychain permission on \"\(KeychainReader.service)\" automatically. Configure in the General tab.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Section {
                 if model.entries.isEmpty {
                     Text(model.isLoading
