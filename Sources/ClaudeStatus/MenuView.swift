@@ -30,6 +30,10 @@ struct MenuView: View {
                     .foregroundStyle(.red)
                     .lineLimit(3)
             }
+            if store.keychainAutomationNeedsSetup {
+                Divider()
+                keychainSetupBanner
+            }
             Divider()
             footer
         }
@@ -74,6 +78,26 @@ struct MenuView: View {
                         .foregroundStyle(.red)
                         .lineLimit(3)
                 }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var keychainSetupBanner: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Image(systemName: "key.slash").foregroundStyle(.orange)
+            Text("Keychain automation needs a one-time password to start working.")
+                .font(.caption)
+                .lineLimit(3)
+            Spacer()
+            if screenshotMode {
+                staticPill("Set Up")
+            } else {
+                Button("Set Up") {
+                    NSApp.activate(ignoringOtherApps: true)
+                    openSettings()
+                }
+                .controlSize(.small)
             }
         }
     }

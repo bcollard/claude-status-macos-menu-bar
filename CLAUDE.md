@@ -44,6 +44,7 @@ claude-status-macos-menu-bar/
 │   ├── App.swift                       # @main, MenuBarExtra + Settings scenes
 │   ├── UsageStore.swift                # @MainActor ObservableObject; orchestrates refresh
 │   ├── KeychainReader.swift            # reads "Claude Code-credentials" — picks freshest entry
+│   ├── KeychainAutomation.swift        # opt-in (default ON) Keychain-prompt workaround
 │   ├── ClaudeConfigReader.swift        # reads ~/.claude.json oauthAccount (email/org)
 │   ├── SessionLogScanner.swift         # streams ~/.claude/projects/**/*.jsonl
 │   ├── UsageAPIClient.swift            # GET /api/oauth/usage → list of plan rows
@@ -440,11 +441,67 @@ Two things keep firing the prompt:
   longer apply. The notarized DMG sidesteps this: a stable Developer ID
   Team ID across releases means each "Always Allow" sticks per Keychain
   item until Claude Code next rewrites it.
+- **Even on the signed release build, the *same* item can keep
+  re-prompting.** Confirmed on an SSO-bound Mac (`cdat` days old,
+  `mdat` updated every few hours — the item is being updated in place,
+  not recreated): Claude Code's write path appears to reset the
+  partition list on every in-place update, on whatever cadence its SSO
+  session forces a token refresh. A stable app signature doesn't help
+  here because the ACL gets narrowed again after each write, not
+  because ClaudeStatus's identity changed.
 
 The only clean fix is on Anthropic's side — when persisting
 `claudeAiOauth`, write the partition list with an allowlist of trusted
 observer Team IDs (or use the `apple:` wildcard for "any signed app").
 Nothing we can do unilaterally.
+
+**Built-in dirty workaround (`KeychainAutomation.swift`).** Options →
+General → "Keep Claude Code Keychain access working automatically" —
+**default ON**. It re-runs `security set-generic-password-partition-list`
+to re-add ClaudeStatus's Team ID (`teamid:PZARL6555S`) to the item's
+partition list, every `UsageStore.refresh()` cycle (every 60s), *before*
+the app reads the item itself that same cycle — so a reset since the
+last cycle never causes ClaudeStatus's own read to trigger the OS prompt.
+Re-granting that trust needs proof of the login keychain's own password
+— that's inherent to the ACL model, with or without us — so the toggle
+alone does nothing until the user supplies one via a `SecureField` in
+Settings (verified against the real keychain with `SecKeychainUnlock`
+before it's accepted). The password is stored in its own dedicated
+Keychain item (`svce=ClaudeStatus-keychain-unlock`), created and read
+only by ClaudeStatus itself (native `SecItem*` calls, so no separate
+Keychain-trust dance for that item), and fed to `/usr/bin/security` via
+its **stdin**, never as a `-k` argument — `security` calls `-k`
+"insecure" precisely because it's visible to other local processes via
+`ps`; stdin isn't. A 5s watchdog kills the `security` process if it ever
+falls back to waiting on an interactive GUI prompt, so a bad or stale
+password can't hang the app.
+
+"Default ON" only means the toggle starts enabled and the dropdown shows
+a one-line setup banner ("needs a one-time password") linking to
+Settings — nothing is stored or executed, and no password can be
+collected silently, until the user actually types it in. Deliberately
+scoped to exactly one item (`svce/acct` hardcoded, never generalized to
+"any Keychain item") — that scoping, not the toggle default, is what
+makes this safe to ship; the same technique widened to arbitrary items
+is how some real-world macOS credential-stealing malware persists
+Keychain access without a re-prompt. "Forget Stored Password" (Settings
+or Diagnostics) deletes the item and flips the toggle off — withdrawing
+the password is withdrawing consent, so it shouldn't stay silently
+"enabled" with nothing to run.
+
+An earlier standalone LaunchAgent + shell-script prototype validated the
+mechanism (see git history on the `keychain-partition-workaround`
+branch) before this was folded into the app. That version could only
+avoid the interactive GUI prompt by passing the password as a `-k`
+CLI argument — the `ps`-visible risk this native version specifically
+fixes by using stdin instead. It also had to poll on a 10-minute
+`launchd` timer; confirmed in practice, that left a real gap when
+Claude Code rewrote the item's ACL during an overnight background wake
+and the next poll wasn't due for several more minutes — one prompt,
+even with the LaunchAgent installed and running cleanly. Piggybacking
+on the app's existing 60s refresh cycle (and running before the app's
+own read, not on an independent timer) closes that same gap without
+needing a separate always-on watcher.
 
 ### 3. Notch overflow on MacBook Pro
 
