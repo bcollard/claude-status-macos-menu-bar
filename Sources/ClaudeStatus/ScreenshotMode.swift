@@ -12,7 +12,7 @@ enum ScreenshotMode {
     /// The screenshot binary runs outside an .app bundle, so there's no
     /// Info.plist to read — keep this in step with `version` in
     /// Bundler.toml (the release checklist calls it out).
-    static let displayVersion = "v0.2.0 (1)"
+    static let displayVersion = "v0.2.1 (1)"
 
     /// Render screenshots with anonymous demo data.
     ///   kind = enterprise | pro            (full-canvas App-Store gallery)
@@ -349,6 +349,20 @@ private struct StaticDiagnosticsView: View {
             SettingsTabStrip(active: .diagnostics, scheme: scheme)
 
             VStack(alignment: .leading, spacing: 8) {
+                Text("App Integrity").font(.headline)
+                VStack(alignment: .leading, spacing: 6) {
+                    integrityLine("Signature valid")
+                    integrityLine("Notarized by Apple")
+                }
+                .padding(.vertical, 8)
+                .padding(.horizontal, 14)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(scheme == .dark ? Color(white: 0.18) : Color.white)
+                )
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
                 Text("Keychain Automation").font(.headline)
                 HStack {
                     Text("Enabled").foregroundStyle(.green)
@@ -468,6 +482,10 @@ private struct StaticDiagnosticsView: View {
         }
         .font(.caption)
         .foregroundStyle(tint)
+    }
+
+    private func integrityLine(_ text: String) -> some View {
+        label(text, systemImage: "checkmark.seal.fill", tint: .green)
     }
 
     private var divider: some View {
