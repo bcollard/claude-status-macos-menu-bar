@@ -62,10 +62,53 @@ final class DiagnosticsModel: ObservableObject {
 struct DiagnosticsView: View {
     @StateObject private var model = DiagnosticsModel()
     @StateObject private var automation = KeychainAutomationModel()
+    @StateObject private var signature = CodeSignatureModel()
     @State private var copiedID: String?
 
     var body: some View {
         Form {
+            Section {
+                if let status = signature.status {
+                    LabeledContent("Signed by") { Text(status.signingAuthority ?? "—").lineLimit(1) }
+                    LabeledContent("Team ID") { Text(status.teamIdentifier ?? "—") }
+                    integrityRow(
+                        ok: status.isValidSignature,
+                        okText: "Signature valid",
+                        badText: "Signature invalid"
+                    )
+                    integrityRow(
+                        ok: status.isNotarized,
+                        okText: "Notarized by Apple",
+                        badText: "Not notarized"
+                    )
+                    if let err = status.error {
+                        Text(err)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                            .lineLimit(3)
+                    }
+                } else {
+                    Text(signature.isChecking ? "Checking…" : "Not checked yet")
+                        .foregroundStyle(.secondary)
+                }
+                Button("Re-check") { signature.check() }
+                    .controlSize(.small)
+                    .disabled(signature.isChecking)
+            } header: {
+                Text("App Integrity")
+            } footer: {
+                Text("""
+                     Confirms this copy of Claude Status is genuinely signed by the \
+                     developer and notarized by Apple — checkable on any Mac, offline, \
+                     using only Apple's public root certificates, none of the \
+                     developer's own credentials. It does not confirm which exact \
+                     source commit built this binary — that would need a different \
+                     kind of check (build provenance / Sigstore-style attestation).
+                     """)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Section {
                 HStack {
                     Text(automation.isEnabled ? "Enabled" : "Disabled")
@@ -145,7 +188,10 @@ struct DiagnosticsView: View {
             }
         }
         .formStyle(.grouped)
-        .onAppear { model.load() }
+        .onAppear {
+            model.load()
+            signature.check()
+        }
     }
 
     // MARK: - Rows
@@ -211,6 +257,12 @@ struct DiagnosticsView: View {
         } else {
             label("No expiry in payload", systemImage: "questionmark.circle", tint: .secondary)
         }
+    }
+
+    private func integrityRow(ok: Bool, okText: String, badText: String) -> some View {
+        label(ok ? okText : badText,
+              systemImage: ok ? "checkmark.seal.fill" : "xmark.seal.fill",
+              tint: ok ? .green : .red)
     }
 
     private func label(_ text: String, systemImage: String, tint: Color) -> some View {

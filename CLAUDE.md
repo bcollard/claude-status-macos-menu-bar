@@ -53,7 +53,8 @@ claude-status-macos-menu-bar/
 │   ├── LaunchAtLogin.swift             # SMAppService wrapper
 │   ├── MenuView.swift                  # dropdown UI (Swift Charts stacked bars)
 │   ├── SettingsView.swift              # ⌘, window: TabView — General + Diagnostics
-│   └── DiagnosticsView.swift           # read-only credential inventory pane
+│   ├── DiagnosticsView.swift           # read-only credential inventory pane
+│   └── CodeSignatureCheck.swift        # Diagnostics: signature/notarization check
 ├── Casks/claude-status.rb              # Homebrew cask formula
 ├── website/                            # claudestatus.runlocal.dev
 │   ├── index.html  styles.css          # single-page site, no framework
@@ -396,6 +397,23 @@ Design constraints, deliberately:
 `KeychainReader.best(_:credentials:)` is the single ranking rule, generic
 over the element type so `read()` and `diagnose()` cannot diverge — the
 pane can't claim one entry is in use while the app uses another.
+
+**App Integrity section** (`CodeSignatureCheck.swift`) shows whether the
+*running* app bundle is genuinely signed by the developer and notarized
+by Apple — `codesign --verify` + `codesign -dvvv` (plain `-dv` doesn't
+print the `Authority=` chain, only `-dvvv` does — confirmed empirically,
+not documented by `codesign --help`) for the signer/Team ID, `spctl -a
+-vv` for the Gatekeeper/notarization verdict. This is deliberately a
+narrower claim than "matches this source commit": the signature and
+stapled notarization ticket travel inside the `.app` bundle and are
+checked against Apple's public root certificates already trusted by
+every Mac, so the same check gives the same result on anyone's machine,
+offline, using none of the developer's own credentials — but it doesn't
+prove which git commit built the binary. That would need build
+provenance / source-to-binary attestation (e.g. Sigstore/SLSA via
+GitHub Actions with OIDC-based signing) — a different release pipeline
+than today's local `release.sh` run against a local Developer ID
+keychain identity and notary profile, not a Diagnostics-pane feature.
 
 ---
 
