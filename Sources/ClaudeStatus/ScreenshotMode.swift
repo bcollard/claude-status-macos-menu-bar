@@ -12,7 +12,7 @@ enum ScreenshotMode {
     /// The screenshot binary runs outside an .app bundle, so there's no
     /// Info.plist to read — keep this in step with `version` in
     /// Bundler.toml (the release checklist calls it out).
-    static let displayVersion = "v0.1.1 (1)"
+    static let displayVersion = "v0.2.0 (1)"
 
     /// Render screenshots with anonymous demo data.
     ///   kind = enterprise | pro            (full-canvas App-Store gallery)
@@ -187,6 +187,15 @@ private struct StaticSettingsView: View {
                 }
             }
 
+            sectionWithFooter(
+                header: "Keychain Automation",
+                footer: "Claude Code periodically rewrites its saved login, which normally makes macOS ask for permission again every few hours. This works around that."
+            ) {
+                row { Text("Keep Claude Code Keychain access working automatically") } trailing: {
+                    toggle(on: true)
+                }
+            }
+
             section(header: "About") {
                 row { Text("Claude Status") } trailing: {
                     Text(ScreenshotMode.displayVersion).monospacedDigit().foregroundStyle(.secondary)
@@ -338,6 +347,21 @@ private struct StaticDiagnosticsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
             SettingsTabStrip(active: .diagnostics, scheme: scheme)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Keychain Automation").font(.headline)
+                HStack {
+                    Text("Enabled").foregroundStyle(.green)
+                    Spacer()
+                    Text("Applied 2 minutes ago").font(.caption).foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 8)
+                .padding(.horizontal, 14)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(scheme == .dark ? Color(white: 0.18) : Color.white)
+                )
+            }
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("Credential entries").font(.headline)
