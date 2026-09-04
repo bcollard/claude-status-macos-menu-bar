@@ -213,6 +213,16 @@
           It's strictly read-only: the app never writes to your Keychain and has no delete button. Stale entries are harmless, so if you'd rather tidy up, each unused row hands you the exact <code>security delete-generic-password</code> command to run yourself. No token is ever displayed or copied.
         </p>
       </article>
+      <article class="card card-wide">
+        <span class="card-num">08</span>
+        <h3>No more repeated password prompts</h3>
+        <p>
+          Claude Code periodically rewrites its own Keychain entry — a token refresh, an SSO re-bootstrap — which resets that entry's access list and makes macOS ask "Claude Status wants to access…" again, sometimes every few hours, even for a stable, signed build.
+        </p>
+        <p>
+          <em>Options → General → Keep Claude Code Keychain access working automatically</em> (on by default) fixes this: enter your Mac login password once, and the app re-grants its own access every refresh cycle, before it reads the credential itself. Scoped to exactly that one Keychain entry — nothing broader — and the password is fed to <code>security</code> over its input stream, never as a visible argument. <em>Forget Stored Password</em> in Settings or Diagnostics removes it and turns automation back off.
+        </p>
+      </article>
     </div>
   </div>
 </section>
@@ -245,14 +255,14 @@
           <source srcset="assets/settings-dark.png" media="(prefers-color-scheme: dark)">
           <img src="assets/settings-light.png" alt="Settings window" loading="lazy">
         </picture>
-        <figcaption><strong>Options.</strong> Pick how often the API gets polled — or turn it off entirely.</figcaption>
+        <figcaption><strong>Options.</strong> Pick how often the API gets polled, or turn it off entirely — and keep Keychain access working automatically.</figcaption>
       </figure>
       <figure class="figure-wide">
         <picture>
           <source srcset="assets/diagnostics-dark.png" media="(prefers-color-scheme: dark)">
-          <img src="assets/diagnostics-light.png" alt="Diagnostics tab listing Keychain credential entries" loading="lazy">
+          <img src="assets/diagnostics-light.png" alt="Diagnostics tab showing App Integrity status and Keychain credential entries" loading="lazy">
         </picture>
-        <figcaption><strong>Diagnostics.</strong> Every credential entry the app can see, which one it picked, and why the others lost.</figcaption>
+        <figcaption><strong>Diagnostics.</strong> Confirms the app is genuinely signed and notarized, shows Keychain automation status, and every credential entry considered — which one it picked, and why the others lost.</figcaption>
       </figure>
     </div>
   </div>
@@ -338,6 +348,10 @@ brew install --cask claude-status" aria-label="Copy install command">Copy</butto
         <span class="check">✓</span>
         <p><strong>Source on GitHub.</strong> ~1.5k lines of Swift. Read it, audit it, fork it.</p>
       </div>
+      <div class="priv-card">
+        <span class="check">✓</span>
+        <p><strong>Verifiable, not just claimed.</strong> <em>Diagnostics → App Integrity</em> confirms your copy is genuinely signed and notarized — checkable on any Mac, offline, using only Apple's public root certificates, none of the developer's own credentials.</p>
+      </div>
     </div>
   </div>
 </section>
@@ -375,6 +389,14 @@ brew install --cask claude-status" aria-label="Copy install command">Copy</butto
       <details>
         <summary><span>Can it clean up old Keychain entries for me?</span></summary>
         <p>Deliberately not. Extra entries are inert — the app picks the one with the latest expiry, so a stale entry can never win — and removing the wrong one would log you out of Claude Code. Instead, each unused row in <em>Diagnostics</em> gives you the exact <code>security delete-generic-password</code> command, so the destructive step stays in your own shell.</p>
+      </details>
+      <details>
+        <summary><span>Why does macOS keep asking for my Keychain password every few hours?</span></summary>
+        <p>Claude Code periodically rewrites its own Keychain entry, which resets that entry's access list — so "Always Allow" doesn't stick even for a stable, signed build. <em>Options → General → Keep Claude Code Keychain access working automatically</em> (on by default) fixes this: enter your login password once, and the app re-grants its own access every refresh cycle before it reads the credential. It's scoped to exactly that one Keychain entry, and the password is fed to <code>security</code> over its input stream, never as a visible command-line argument.</p>
+      </details>
+      <details>
+        <summary><span>How do I know this copy of the app hasn't been tampered with?</span></summary>
+        <p>Open <em>Options → Diagnostics</em>. The <strong>App Integrity</strong> section confirms the running app is genuinely signed by the developer and notarized by Apple, using the same checks (<code>codesign --verify</code>, <code>spctl -a -vv</code>) that Gatekeeper itself relies on — checkable offline, on any Mac, against Apple's public root certificates. It confirms the binary is authentic and untampered, not which exact source commit built it; that would need a different kind of check (build-provenance attestation).</p>
       </details>
       <details>
         <summary><span>What macOS version do I need?</span></summary>
