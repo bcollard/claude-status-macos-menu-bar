@@ -320,7 +320,13 @@ Refresh endpoint: `https://platform.claude.com/v1/oauth/token`. We do
 
 - Buckets at the top level are usage pools; `null` means doesn't apply to the
   current plan. Pro populates `five_hour` and `seven_day`; Enterprise leaves
-  most null and surfaces overage in `extra_usage`.
+  most null and surfaces overage in `extra_usage`. **Not mutually
+  exclusive, though** — observed 2026-09 on a Pro account with a
+  credit-based model (Fable 5.1) in play: `extra_usage` populated
+  *alongside* real `five_hour`/`seven_day` values, not instead of them.
+  Anything reading `extraUsage != nil` as "this is the Enterprise-only
+  shape, ignore the other buckets" will silently drop real data — see
+  `menuBarCount` below, which used to do exactly that.
 - **`used_credits` and `monthly_limit` are minor units (cents), not dollars.**
   Divide by 100 before display — Anthropic follows the standard financial
   convention so the integer storage avoids float drift. E.g. `25000` means
@@ -348,9 +354,14 @@ Unknown shapes degrade to an empty plan section — local-log data still shows.
 
 `UsageStore.menuBarCount` decides what to render next to the icon:
 
-1. **Extra Usage available** (typical Enterprise opt-in) →
-   `"<utilization>% • $<usedDollars>"` (e.g. `64% • $163.45`).
-2. **Pro/Max** (no extra_usage, but `five_hour`/`seven_day` populated) →
+1. **Extra Usage available** → `"<utilization>% • $<usedDollars>"`
+   (e.g. `64% • $163.45`), plus — if `five_hour`/`seven_day` are *also*
+   populated (credit-based plans, see above) — whichever of the two is
+   closer to its cap, appended as `" • 5h X%"` or `" • wk Y%"`: e.g.
+   `80% • $31.83 • 5h 84%`. That bucket is picked by highest utilization,
+   not a fixed preference for 5h over week, since whichever one is
+   closer to binding next is the one worth a glance.
+2. **Pro/Max without extra usage** (`five_hour`/`seven_day` populated) →
    `"5h X% • wk Y%"` (e.g. `5h 13% • wk 2%`). If only one bucket is
    populated, just that one (`5h X%` or `wk Y%`).
 3. **Fallback** → today's grand-total tokens via `formatTokens(...)`

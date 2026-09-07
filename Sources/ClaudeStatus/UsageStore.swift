@@ -138,13 +138,31 @@ final class UsageStore: ObservableObject {
 
     var menuBarCount: String? {
         guard lastRefreshed != nil else { return nil }
-        // 1. Enterprise w/ overage credits: "<util%> • $<used>"
-        if let xu = apiUsage?.extraUsage {
-            return String(format: "%.0f%% • $%.2f", xu.utilizationPercent, xu.usedDollars)
-        }
-        // 2. Pro/Max: "5h X% • wk Y%" (whichever buckets are populated)
         let five = apiUsage?.fiveHourPercent
         let week = apiUsage?.weeklyPercent
+
+        // 1. Extra Usage credits (Enterprise overage, or newer
+        // credit-based plans that also populate five_hour/seven_day
+        // alongside it — not documented as possible when this was first
+        // written, but observed in practice). Append whichever
+        // rate-limit bucket is closer to its cap, since that's the one
+        // about to bind next; dropping it silently just because extra
+        // usage is also present hides a real signal.
+        if let xu = apiUsage?.extraUsage {
+            var text = String(format: "%.0f%% • $%.2f", xu.utilizationPercent, xu.usedDollars)
+            let mostUrgent: (label: String, value: Double)?
+            switch (five, week) {
+            case let (.some(f), .some(w)): mostUrgent = f >= w ? ("5h", f) : ("wk", w)
+            case let (.some(f), .none):    mostUrgent = ("5h", f)
+            case let (.none, .some(w)):    mostUrgent = ("wk", w)
+            case (.none, .none):           mostUrgent = nil
+            }
+            if let mostUrgent {
+                text += String(format: " • %@ %.0f%%", mostUrgent.label, mostUrgent.value)
+            }
+            return text
+        }
+        // 2. Pro/Max without extra usage: "5h X% • wk Y%" (whichever populated)
         switch (five, week) {
         case let (.some(f), .some(w)):
             return String(format: "5h %.0f%% • wk %.0f%%", f, w)
