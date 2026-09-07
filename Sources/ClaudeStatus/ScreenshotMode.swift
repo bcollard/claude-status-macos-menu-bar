@@ -12,7 +12,7 @@ enum ScreenshotMode {
     /// The screenshot binary runs outside an .app bundle, so there's no
     /// Info.plist to read — keep this in step with `version` in
     /// Bundler.toml (the release checklist calls it out).
-    static let displayVersion = "v0.2.1 (1)"
+    static let displayVersion = "v0.2.2 (1)"
 
     /// Render screenshots with anonymous demo data.
     ///   kind = enterprise | pro            (full-canvas App-Store gallery)

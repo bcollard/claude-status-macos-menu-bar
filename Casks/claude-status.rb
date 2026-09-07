@@ -1,6 +1,6 @@
 cask "claude-status" do
-  version "0.2.1"
-  sha256 "0f41d2d13860d1624140dae4965e6d4d86987301aaeb8e7c5ab518801aeb94b9"
+  version "0.2.2"
+  sha256 "1d7f9d39394ddb90f63f34351e3b94a0de254e81304e43d6e29f1ec293370db5"
 
   url "https://github.com/bcollard/claude-status-macos-menu-bar/releases/download/v#{version}/ClaudeStatus.dmg"
   name "Claude Status"
