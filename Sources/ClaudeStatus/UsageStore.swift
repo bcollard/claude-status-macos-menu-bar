@@ -141,26 +141,27 @@ final class UsageStore: ObservableObject {
         let five = apiUsage?.fiveHourPercent
         let week = apiUsage?.weeklyPercent
 
-        // 1. Extra Usage credits (Enterprise overage, or newer
-        // credit-based plans that also populate five_hour/seven_day
-        // alongside it — not documented as possible when this was first
-        // written, but observed in practice). Append whichever
-        // rate-limit bucket is closer to its cap, since that's the one
-        // about to bind next; dropping it silently just because extra
-        // usage is also present hides a real signal.
+        // 1. Extra Usage credits. Two distinct shapes in practice:
+        // - Credit-based plans (e.g. Fable 5.1 on Pro) populate
+        //   five_hour/seven_day *alongside* extra_usage. Lead with those
+        //   (5h, then week — the ones closer to binding), drop the
+        //   extra-usage percentage (redundant next to two other
+        //   percentages) and keep just the dollar figure.
+        // - Classic Enterprise leaves five_hour/seven_day null — extra
+        //   usage is the only signal available, so keep its percentage;
+        //   there's nothing else to convey "how close to the cap".
         if let xu = apiUsage?.extraUsage {
-            var text = String(format: "%.0f%% • $%.2f", xu.utilizationPercent, xu.usedDollars)
-            let mostUrgent: (label: String, value: Double)?
+            let dollars = String(format: "$%.0f", xu.usedDollars)
             switch (five, week) {
-            case let (.some(f), .some(w)): mostUrgent = f >= w ? ("5h", f) : ("wk", w)
-            case let (.some(f), .none):    mostUrgent = ("5h", f)
-            case let (.none, .some(w)):    mostUrgent = ("wk", w)
-            case (.none, .none):           mostUrgent = nil
+            case let (.some(f), .some(w)):
+                return String(format: "5h %.0f%% • wk %.0f%% • %@", f, w, dollars)
+            case let (.some(f), .none):
+                return String(format: "5h %.0f%% • %@", f, dollars)
+            case let (.none, .some(w)):
+                return String(format: "wk %.0f%% • %@", w, dollars)
+            case (.none, .none):
+                return String(format: "%.0f%% • %@", xu.utilizationPercent, dollars)
             }
-            if let mostUrgent {
-                text += String(format: " • %@ %.0f%%", mostUrgent.label, mostUrgent.value)
-            }
-            return text
         }
         // 2. Pro/Max without extra usage: "5h X% • wk Y%" (whichever populated)
         switch (five, week) {

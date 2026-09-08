@@ -354,13 +354,19 @@ Unknown shapes degrade to an empty plan section — local-log data still shows.
 
 `UsageStore.menuBarCount` decides what to render next to the icon:
 
-1. **Extra Usage available** → `"<utilization>% • $<usedDollars>"`
-   (e.g. `64% • $163.45`), plus — if `five_hour`/`seven_day` are *also*
-   populated (credit-based plans, see above) — whichever of the two is
-   closer to its cap, appended as `" • 5h X%"` or `" • wk Y%"`: e.g.
-   `80% • $31.83 • 5h 84%`. That bucket is picked by highest utilization,
-   not a fixed preference for 5h over week, since whichever one is
-   closer to binding next is the one worth a glance.
+1. **Extra Usage available.** Two shapes, deliberately formatted
+   differently:
+   - **`five_hour`/`seven_day` also populated** (credit-based plans,
+     see above) → lead with those, fixed order 5h then week (not
+     picked by urgency — a stable order is easier to read at a glance
+     than one that reorders itself), then the extra-usage figure with
+     its percentage dropped (redundant next to two other percentages)
+     and dollars rounded to whole numbers: `"5h X% • wk Y% • $Z"`,
+     e.g. `5h 84% • wk 19% • $32`.
+   - **`five_hour`/`seven_day` null** (classic Enterprise — nothing
+     else to convey "how close to the cap", so the percentage stays):
+     `"<utilization>% • $<usedDollars>"`, dollars rounded, e.g.
+     `64% • $163`.
 2. **Pro/Max without extra usage** (`five_hour`/`seven_day` populated) →
    `"5h X% • wk Y%"` (e.g. `5h 13% • wk 2%`). If only one bucket is
    populated, just that one (`5h X%` or `wk Y%`).
