@@ -76,7 +76,9 @@ final class UsageStore: ObservableObject {
         // scans, and timers — the caller will set published fields directly.
         if demo { return }
 
-        loadAccount()
+        // No Keychain read here: `refresh()` re-applies the Keychain
+        // automation first, then reads. Reading before that would prompt
+        // whenever Claude Code rewrote its item while this app was closed.
         Task { await refresh() }
         scheduleTimer()
     }
@@ -88,7 +90,10 @@ final class UsageStore: ObservableObject {
         }
     }
 
-    func loadAccount() {
+    /// Reads the Keychain and returns the result so `loadAPI` can reuse it
+    /// instead of reading a second time later in the same cycle.
+    @discardableResult
+    func loadAccount() -> Result<ClaudeCredentials, Error> {
         let info = ClaudeConfigReader.read()
         email = info?.email
         organizationName = info?.organizationName
@@ -99,15 +104,17 @@ final class UsageStore: ObservableObject {
             plan = creds.subscriptionType
             rateLimitTier = creds.rateLimitTier
             tokenExpiresAt = creds.expiresAt
+            return .success(creds)
         } catch {
             account = info?.email ?? "(not logged in)"
             plan = nil
             rateLimitTier = nil
             tokenExpiresAt = nil
+            return .failure(error)
         }
     }
 
-    private func loadAPI(force: Bool = false) async {
+    private func loadAPI(credentials: Result<ClaudeCredentials, Error>, force: Bool = false) async {
         // Server-mandated backoff (429 Retry-After) is always respected
         // — hammering during a 429 just extends the lockout.
         if let until = apiBackoffUntil, until > Date() { return }
@@ -117,7 +124,7 @@ final class UsageStore: ObservableObject {
            Date().timeIntervalSince(last) < apiRefreshInterval { return }
 
         do {
-            let creds = try KeychainReader.read()
+            let creds = try credentials.get()
             let resp = try await UsageAPIClient.shared.fetch(credentials: creds)
             apiUsage = resp
             apiError = nil
@@ -192,6 +199,9 @@ final class UsageStore: ObservableObject {
             KeychainAutomation.applyFix()
         }.value
         keychainAutomationNeedsSetup = KeychainAutomation.isEnabled && !KeychainAutomation.hasStoredSecret
+        // Read immediately after the fix, before the slow log scan, so
+        // Claude Code has no time to rewrite the item in between.
+        let credentials = loadAccount()
 
         let cal = Calendar.current
         let now = Date()
@@ -214,8 +224,7 @@ final class UsageStore: ObservableObject {
             lastError = "\(error)"
         }
 
-        loadAccount()
-        await loadAPI(force: manual)
+        await loadAPI(credentials: credentials, force: manual)
 
         let procInfo: ClaudeProcessInfo = await Task.detached(priority: .utility) {
             ProcessScanner.scanClaudeProcesses()

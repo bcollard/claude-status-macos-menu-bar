@@ -157,6 +157,12 @@ enum KeychainReader {
         throw KeychainError.decodeFailed
     }
 
+    /// Every `acct` stored under `service`, attributes only — never
+    /// triggers a Keychain authorization prompt.
+    static func listAccounts() -> [String] {
+        ((try? listEntryAttributes()) ?? []).compactMap { $0[kSecAttrAccount as String] as? String }
+    }
+
     private static func readKeychainEntries() throws -> [ClaudeCredentials] {
         var result: [ClaudeCredentials] = []
         for entry in try listEntryAttributes() {

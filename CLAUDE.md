@@ -95,10 +95,12 @@ claude-status-macos-menu-bar/
 `UsageStore.refresh()` runs at app start and every 60s (timer). Each
 refresh:
 
-1. Scans JSONL files in two date windows (start-of-day, start-of-week) on
+1. Runs `KeychainAutomation.applyFix()` (see Known limitations §2).
+2. Reads the Keychain once (`loadAccount()`), right after step 1. The
+   result is passed to `loadAPI()` instead of being read again.
+3. Scans JSONL files in two date windows (start-of-day, start-of-week) on
    a detached utility-priority task.
-2. Re-reads the Keychain entry (cheap; in-memory after first auth).
-3. Calls `loadAPI()` — gated by a separate `apiRefreshInterval` (default
+4. Calls `loadAPI()` — gated by a separate `apiRefreshInterval` (default
    5 min). The API call also respects `apiBackoffUntil` set when the
    server returns 429 (honoring `Retry-After`, falling back to 5 min).
    The previous `apiUsage` is **kept visible** during errors so the UI
@@ -494,8 +496,10 @@ Nothing we can do unilaterally.
 General → "Keep Claude Code Keychain access working automatically" —
 **default ON**. It re-runs `security set-generic-password-partition-list`
 to re-add ClaudeStatus's Team ID (`teamid:PZARL6555S`) to the item's
-partition list, every `UsageStore.refresh()` cycle (every 60s), *before*
-the app reads the item itself that same cycle — so a reset since the
+partition list, every `UsageStore.refresh()` cycle (every 60s), immediately *before*
+the app reads the item itself that same cycle (and before the slow log
+scan, so Claude Code has no window to rewrite it in between; `init`
+does no Keychain read of its own) — so a reset since the
 last cycle never causes ClaudeStatus's own read to trigger the OS prompt.
 Re-granting that trust needs proof of the login keychain's own password
 — that's inherent to the ACL model, with or without us — so the toggle
@@ -515,8 +519,10 @@ password can't hang the app.
 a one-line setup banner ("needs a one-time password") linking to
 Settings — nothing is stored or executed, and no password can be
 collected silently, until the user actually types it in. Deliberately
-scoped to exactly one item (`svce/acct` hardcoded, never generalized to
-"any Keychain item") — that scoping, not the toggle default, is what
+scoped to Claude Code's own credential items (`svce` hardcoded; every
+`acct` under it, listed attributes-only — not a predicted `acct`, since
+Claude Code's naming differs per Mac and `read()` fetches every item's
+payload anyway; never generalized to "any Keychain item") — that scoping, not the toggle default, is what
 makes this safe to ship; the same technique widened to arbitrary items
 is how some real-world macOS credential-stealing malware persists
 Keychain access without a re-prompt. "Forget Stored Password" (Settings

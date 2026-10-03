@@ -19,10 +19,9 @@ import Combine
 enum KeychainAutomation {
     private static let unlockService = "ClaudeStatus-keychain-unlock"
     private static let targetService = KeychainReader.service
-    private static let targetAccount = "claude-code-user"
     /// ClaudeStatus's own Developer ID Team ID — see codesign -dv on the
-    /// released app. Scoped narrowly to this one Keychain item; never
-    /// generalized to "any item" (that's the whole safety argument for
+    /// released app. Scoped narrowly to Claude Code's own credential items
+    /// (`svce=Claude Code-credentials`); never generalized to "any item" (that's the whole safety argument for
     /// this feature — widening the target loses it).
     private static let teamID = "PZARL6555S"
 
@@ -114,33 +113,44 @@ enum KeychainAutomation {
         return String(data: data, encoding: .utf8)
     }
 
-    /// Attributes-only existence check — never triggers a Keychain
-    /// authorization prompt.
-    private static func targetItemExists() -> Bool {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: targetService,
-            kSecAttrAccount as String: targetAccount,
-            kSecMatchLimit as String: kSecMatchLimitOne,
-            kSecReturnAttributes as String: true,
-        ]
-        var item: AnyObject?
-        return SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess
-    }
-
-    /// Re-applies the partition list. Cheap no-op if disabled, not yet
-    /// configured, or Claude Code hasn't written its item yet. Safe to
-    /// call every refresh cycle — this is blocking, call off the main actor.
+    /// Re-applies the partition list on every `Claude Code-credentials`
+    /// item. Covers all of them rather than one predicted `acct`: Claude
+    /// Code's `acct` naming varies by Mac (see CLAUDE.md "Multiple
+    /// entries"), and `KeychainReader.read()` fetches every item's payload
+    /// anyway, so any item left out could prompt. Cheap no-op if disabled
+    /// or not yet configured. Safe to call every refresh cycle — this is
+    /// blocking, call off the main actor.
     @discardableResult
     static func applyFix() -> Bool {
-        guard isEnabled, let password = readSecret(), targetItemExists() else { return true }
+        guard isEnabled, let password = readSecret() else { return true }
 
+        let accounts = KeychainReader.listAccounts()
+        guard !accounts.isEmpty else {
+            UserDefaults.standard.set("No \(targetService) item in the Keychain", forKey: kLastError)
+            return false
+        }
+
+        let errors = accounts.compactMap { account in
+            setPartitionList(account: account, password: password).map { "\(account): \($0)" }
+        }
+        if errors.isEmpty {
+            UserDefaults.standard.set(Date(), forKey: kLastAppliedAt)
+            UserDefaults.standard.removeObject(forKey: kLastError)
+            return true
+        } else {
+            UserDefaults.standard.set(errors.joined(separator: "; "), forKey: kLastError)
+            return false
+        }
+    }
+
+    /// Returns nil on success, or the failure output.
+    private static func setPartitionList(account: String, password: String) -> String? {
         let keychainPath = NSHomeDirectory() + "/Library/Keychains/login.keychain-db"
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/security")
         process.arguments = [
             "set-generic-password-partition-list",
-            "-a", targetAccount, "-s", targetService,
+            "-a", account, "-s", targetService,
             "-S", "apple-tool:,apple:,teamid:\(teamID)",
             keychainPath,
         ]
@@ -153,8 +163,7 @@ enum KeychainAutomation {
         do {
             try process.run()
         } catch {
-            UserDefaults.standard.set("\(error)", forKey: kLastError)
-            return false
+            return "\(error)"
         }
 
         // `security` falls back to an interactive GUI prompt if the stdin
@@ -172,17 +181,9 @@ enum KeychainAutomation {
         process.waitUntilExit()
         watchdog.cancel()
 
+        guard process.terminationStatus != 0 else { return nil }
         let output = String(data: stdout.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-
-        if process.terminationStatus == 0 {
-            UserDefaults.standard.set(Date(), forKey: kLastAppliedAt)
-            UserDefaults.standard.removeObject(forKey: kLastError)
-            return true
-        } else {
-            UserDefaults.standard.set(output.isEmpty ? "security exited \(process.terminationStatus)" : output,
-                                       forKey: kLastError)
-            return false
-        }
+        return output.isEmpty ? "security exited \(process.terminationStatus)" : output
     }
 }
 
