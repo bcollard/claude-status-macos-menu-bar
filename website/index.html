@@ -382,7 +382,7 @@ brew install --cask claude-status" aria-label="Copy install command">Copy</butto
       </details>
       <details>
         <summary><span>Why does macOS keep asking for my Keychain password every few hours?</span></summary>
-        <p>Claude Code periodically rewrites its own Keychain entry, which resets that entry's access list — so "Always Allow" doesn't stick even for a stable, signed build. <em>Options → General → Keep Claude Code Keychain access working automatically</em> (on by default) fixes this: enter your login password once, and the app re-grants its own access every refresh cycle before it reads the credential. It's scoped to exactly that one Keychain entry, and the password is fed to <code>security</code> over its input stream, never as a visible command-line argument.</p>
+        <p>Claude Code periodically rewrites its own Keychain entry, which resets that entry's access list — so "Always Allow" doesn't stick even for a stable, signed build. <em>Options → General → Keep Claude Code Keychain access working automatically</em> (on by default) fixes this: enter your login password once, and the app re-grants its own access every refresh cycle before it reads the credential. It only touches Claude Code's own <code>Claude Code-credentials</code> entries, and the password is fed to <code>security</code> over its input stream, never as a visible command-line argument. Versions before 0.2.4 skipped this step on Macs whose username isn't an email address; update if you still get prompts.</p>
       </details>
       <details>
         <summary><span>How do I know this copy of the app hasn't been tampered with?</span></summary>
