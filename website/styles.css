@@ -85,7 +85,7 @@ pre code { background: none; padding: 0; border: 0; border-radius: 0; }
   display: inline-flex; gap: 10px; align-items: center;
   text-decoration: none; color: var(--text);
 }
-.brand strong { font-weight: 700; letter-spacing: -0.01em; }
+.brand strong { font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; }
 .brand-mark {
   display: inline-flex; align-items: center; justify-content: center;
   width: 28px; height: 28px; border-radius: 8px;
@@ -104,7 +104,28 @@ pre code { background: none; padding: 0; border: 0; border-radius: 0; }
   font-weight: 500;
 }
 .nav-right a:hover { color: var(--text); }
-.nav-github { color: var(--brand) !important; font-weight: 600 !important; }
+.nav-github { color: var(--brand) !important; font-weight: 600 !important; white-space: nowrap; }
+.nav-version {
+  font: 600 11.5px var(--mono) !important;
+  color: var(--text-2) !important;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 8px;
+  text-decoration: none;
+}
+.nav-version:hover { color: var(--brand) !important; border-color: var(--brand); }
+@media (max-width: 740px) {
+  /* Section links are reachable by scrolling; keep the GitHub link and
+     the release badge so the nav fits on a phone. */
+  .nav-right { gap: 14px; }
+  .nav-right a { display: none; }
+  .nav-right .nav-github,
+  .nav-right .nav-version { display: inline; }
+}
+@media (max-width: 360px) {
+  /* The logo alone still identifies the site; the text would wrap. */
+  .brand strong { display: none; }
+}
 
 .theme-toggle {
   border: 1px solid var(--border);

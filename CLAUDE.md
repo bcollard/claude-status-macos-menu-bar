@@ -678,6 +678,12 @@ To ship a new version: bump `version` in `Bundler.toml` and in
 from its output, cut a new GitHub release with the new DMG, push the
 cask change.
 
+**Also run `/usr/bin/python3 scripts/set-website-version.py`** — it
+stamps the top-bar release badge (next to the GitHub link) and the
+`styles.css?v=` cache-buster on every `website/*.html` page, reading
+the version from `Bundler.toml`. Static on purpose, same as
+marina-website: no GitHub API call from visitors' browsers.
+
 **Also bump `ScreenshotMode.displayVersion`** — the About row in the
 Settings screenshot is painted from that constant, because the screenshot
 binary runs outside an .app bundle and has no Info.plist to read. If a
