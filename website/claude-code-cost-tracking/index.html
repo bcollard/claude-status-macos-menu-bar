@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-VPXE38XTRB"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-VPXE38XTRB');
+  </script>
+
+  <title>Track Claude Code token usage and cost on Mac · Claude Status</title>
+  <meta name="description" content="Claude Code stores token counts in local JSONL session logs. See how to read them, how per-model API-equivalent cost is computed, and how to see it daily in your menu bar.">
+  <link rel="canonical" href="https://claudestatus.runlocal.dev/claude-code-cost-tracking/">
+
+  <meta name="theme-color" content="#d97757" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1a1613" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light dark">
+  <meta name="author" content="Baptiste Collard">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Claude Status">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:url" content="https://claudestatus.runlocal.dev/claude-code-cost-tracking/">
+  <meta property="og:title" content="Track Claude Code token usage and cost on Mac">
+  <meta property="og:description" content="Claude Code stores token counts in local JSONL session logs. See how to read them, how per-model API-equivalent cost is computed, and how to see it daily in your menu bar.">
+  <meta property="og:image" content="https://claudestatus.runlocal.dev/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Track Claude Code token usage and cost on Mac">
+  <meta name="twitter:description" content="Claude Code stores token counts in local JSONL session logs. See how to read them, how per-model API-equivalent cost is computed, and how to see it daily in your menu bar.">
+  <meta name="twitter:image" content="https://claudestatus.runlocal.dev/assets/og-image.png">
+
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="apple-touch-icon" href="/assets/favicon.svg">
+
+  <link rel="stylesheet" href="/styles.css?v=v0.2.4">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Track Claude Code token usage and API-equivalent cost",
+    "description": "Claude Code stores token counts in local JSONL session logs. See how to read them, how per-model API-equivalent cost is computed, and how to see it daily in your menu bar.",
+    "url": "https://claudestatus.runlocal.dev/claude-code-cost-tracking/",
+    "mainEntityOfPage": "https://claudestatus.runlocal.dev/claude-code-cost-tracking/",
+    "inLanguage": "en",
+    "author": {
+      "@type": "Person",
+      "name": "Baptiste Collard"
+    },
+    "dateModified": "2026-10-18",
+    "datePublished": "2026-10-18",
+    "image": "https://claudestatus.runlocal.dev/assets/og-image.png",
+    "about": {
+      "@type": "SoftwareApplication",
+      "name": "Claude Status",
+      "url": "https://claudestatus.runlocal.dev/"
+    }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Claude Status",
+        "item": "https://claudestatus.runlocal.dev/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Cost tracking",
+        "item": "https://claudestatus.runlocal.dev/claude-code-cost-tracking/"
+      }
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Where does Claude Code store token usage?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "In JSONL files under ~/.claude/projects/. Each assistant turn has a usage block with input, output, cache-creation and cache-read token counts."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is the cost shown what I am billed?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. On subscription plans it is the API-equivalent cost at list prices. It is a comparison figure, not an invoice."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does it read my conversations?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. It extracts timestamps, model names and token counts. Message content is not read."
+        }
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+
+<nav class="nav">
+  <a class="brand" href="/" aria-label="Claude Status">
+    <span class="brand-mark" aria-hidden="true">
+      <img src="/assets/asterisk.svg" width="22" height="22" alt="">
+    </span>
+    <strong>Claude Status</strong>
+  </a>
+  <div class="nav-right">
+    <a href="/#features">Features</a>
+    <a href="/#install">Install</a>
+    <a href="/#faq">FAQ</a>
+    <a href="https://github.com/bcollard/claude-status-macos-menu-bar" class="nav-github" target="_blank" rel="noopener">
+      GitHub →
+    </a>
+    <a href="https://github.com/bcollard/claude-status-macos-menu-bar/releases/tag/v0.2.4" class="nav-version" target="_blank" rel="noopener" title="Latest release">v0.2.4</a>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+      <span class="sun">☀</span>
+      <span class="moon">☾</span>
+    </button>
+  </div>
+</nav>
+
+<main class="section article">
+  <div class="container prose">
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Claude Status</a> <span aria-hidden="true">/</span> <span>Cost tracking</span></nav>
+    <h1>Track Claude Code token usage and API-equivalent cost</h1>
+    <p class="section-lede">Every Claude Code turn is logged locally with its token counts. That is enough to compute how many tokens you used per model and what the same usage would cost at Anthropic API list prices.</p>
+
+<h2>Where Claude Code stores usage</h2>
+<p>Session logs live in <code>~/.claude/projects/&lt;project&gt;/&lt;session-id&gt;.jsonl</code>. Each assistant turn includes a <code>usage</code> block:</p>
+<pre><code>{ "timestamp": "2026-05-22T07:53:00.000Z",
+  "model": "claude-opus-4-7",
+  "usage": {
+    "input_tokens": 3,
+    "output_tokens": 412,
+    "cache_creation_input_tokens": 6316,
+    "cache_read_input_tokens": 11164
+  } }</code></pre>
+<p>The four counters are priced differently, so a cost estimate needs all of them.</p>
+
+<h2>How API-equivalent cost is computed</h2>
+<ol>
+  <li>Stream every JSONL file and keep entries inside the time window (today, this week).</li>
+  <li>Drop synthetic entries (<code>model == "&lt;synthetic&gt;"</code>).</li>
+  <li>Sum input, output, cache-read and cache-write tokens per model.</li>
+  <li>Multiply each sum by that model's price per million tokens.</li>
+</ol>
+<p>On a Pro, Max, Team or Enterprise plan you are not billed per token. The figure shows what the same usage would cost through the API, which is useful for comparing plans and for spotting expensive sessions.</p>
+
+<h2>What you get in the menu bar</h2>
+<ul>
+  <li>Stacked bars for <em>today</em> and <em>this week</em>, split by Opus, Sonnet and Haiku.</li>
+  <li>API-equivalent USD next to each model.</li>
+  <li>A token count in the menu bar title when no plan data is available.</li>
+</ul>
+
+<h2>Privacy</h2>
+<p>Claude Status reads only the <code>usage</code> blocks and timestamps. It does not read message content, and the logs never leave your Mac. See <a href="/#privacy">what leaves your Mac</a>.</p>
+
+<h2>Install</h2>
+<div class="install-cmd">
+        <pre><code><span class="prompt">$</span> brew tap bcollard/claude-status
+<span class="prompt">$</span> brew trust --tap bcollard/claude-status
+<span class="prompt">$</span> brew install --cask claude-status</code></pre>
+      </div>
+
+    <h2>Questions</h2>
+    <div class="faq-list">
+      <details>
+        <summary><span>Where does Claude Code store token usage?</span></summary>
+        <p>In JSONL files under ~/.claude/projects/. Each assistant turn has a usage block with input, output, cache-creation and cache-read token counts.</p>
+      </details>
+      <details>
+        <summary><span>Is the cost shown what I am billed?</span></summary>
+        <p>No. On subscription plans it is the API-equivalent cost at list prices. It is a comparison figure, not an invoice.</p>
+      </details>
+      <details>
+        <summary><span>Does it read my conversations?</span></summary>
+        <p>No. It extracts timestamps, model names and token counts. Message content is not read.</p>
+      </details>
+    </div>
+
+    <h2>Related guides</h2>
+    <ul>
+      <li><a href="/claude-code-usage-limits/">Check your Claude Code usage limits from the macOS menu bar</a></li>
+      <li><a href="/claude-code-keychain-password-prompt/">Fix repeated Keychain password prompts for Claude Code credentials</a></li>
+      <li><a href="/">Claude Status overview and install</a></li>
+    </ul>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container footer-grid">
+    <div>
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <img src="/assets/asterisk.svg" width="22" height="22" alt="">
+        </span>
+        <strong>Claude Status</strong>
+      </div>
+      <p class="footer-tag">macOS menu bar for Claude Code usage.</p>
+    </div>
+    <div>
+      <h4>Guides</h4>
+      <ul>
+        <li><a href="/claude-code-usage-limits/">Usage limits</a></li>
+        <li><a href="/claude-code-cost-tracking/">Cost tracking</a></li>
+        <li><a href="/claude-code-keychain-password-prompt/">Keychain prompts fix</a></li>
+        <li><a href="/claude-code-enterprise-extra-usage/">Enterprise Extra Usage</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Project</h4>
+      <ul>
+        <li><a href="https://github.com/bcollard/claude-status-macos-menu-bar" target="_blank" rel="noopener">GitHub repo</a></li>
+        <li><a href="https://github.com/bcollard/claude-status-macos-menu-bar/releases" target="_blank" rel="noopener">Releases</a></li>
+        <li><a href="https://github.com/bcollard/claude-status-macos-menu-bar/issues" target="_blank" rel="noopener">Issues &amp; feedback</a></li>
+        <li>Not affiliated with Anthropic.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="copy">© 2026 · Built with care · <a href="https://github.com/bcollard/claude-status-macos-menu-bar" target="_blank" rel="noopener">Audit the source</a></p>
+</footer>
+
+<script>
+  (function() {
+    const root = document.documentElement;
+    const btn = document.getElementById('themeToggle');
+    let stored = null;
+    try { stored = localStorage.getItem('cs-theme'); } catch (e) {}
+    if (stored) root.setAttribute('data-theme', stored);
+    btn.addEventListener('click', () => {
+      const cur = root.getAttribute('data-theme') || 'auto';
+      const next = cur === 'auto' ? 'light' : cur === 'light' ? 'dark' : 'auto';
+      root.setAttribute('data-theme', next);
+      try {
+        if (next === 'auto') localStorage.removeItem('cs-theme');
+        else localStorage.setItem('cs-theme', next);
+      } catch (e) {}
+    });
+  })();
+</script>
+
+</body>
+</html>

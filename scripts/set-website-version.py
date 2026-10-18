@@ -37,7 +37,7 @@ github = re.compile(r'(<a href="' + re.escape(repo) + r'" class="nav-github"[^>]
 css = re.compile(r'href="/styles\.css(\?v=[^"]*)?"')
 
 changed = 0
-for path in sorted(glob.glob(os.path.join(root, "website", "*.html"))):
+for path in sorted(glob.glob(os.path.join(root, "website", "**", "*.html"), recursive=True)):
     src = open(path, encoding="utf-8").read()
     out, _ = github.subn(lambda m: m.group(1) + "\n    " + badge, src, count=1)
     out = css.sub(f'href="/styles.css?v={version}"', out)

@@ -74,7 +74,7 @@
     "description": "A native macOS menu bar app that monitors Claude Code usage. Live plan limits, per-model breakdown, API-equivalent cost.",
     "license": "https://github.com/bcollard/claude-status-macos-menu-bar/blob/main/LICENSE",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-    "softwareVersion": "0.1.0",
+    "softwareVersion": "0.2.4",
     "image": "https://claudestatus.runlocal.dev/assets/og-image.png"
   }
   </script>
@@ -355,7 +355,7 @@ brew install --cask claude-status" aria-label="Copy install command">Copy</butto
     <div class="faq-list">
       <details>
         <summary><span>Will it work on my plan?</span></summary>
-        <p>Yes for all current consumer/business plans: <strong>Pro</strong>, <strong>Max</strong>, <strong>Team</strong>, <strong>Enterprise</strong>. The dropdown adapts to the fields the API returns — Enterprise gets the Extra Usage row, Pro/Max get five-hour and weekly utilization.</p>
+        <p>See also <a href="/claude-code-usage-limits/">usage limits</a> and <a href="/claude-code-enterprise-extra-usage/">Enterprise Extra Usage</a>. Yes for all current consumer/business plans: <strong>Pro</strong>, <strong>Max</strong>, <strong>Team</strong>, <strong>Enterprise</strong>. The dropdown adapts to the fields the API returns — Enterprise gets the Extra Usage row, Pro/Max get five-hour and weekly utilization.</p>
       </details>
       <details>
         <summary><span>Will it cost anything?</span></summary>
@@ -383,7 +383,7 @@ brew install --cask claude-status" aria-label="Copy install command">Copy</butto
       </details>
       <details>
         <summary><span>Why does macOS keep asking for my Keychain password every few hours?</span></summary>
-        <p>Claude Code periodically rewrites its own Keychain entry, which resets that entry's access list — so "Always Allow" doesn't stick even for a stable, signed build. <em>Options → General → Keep Claude Code Keychain access working automatically</em> (on by default) fixes this: enter your login password once, and the app re-grants its own access every refresh cycle before it reads the credential. It only touches Claude Code's own <code>Claude Code-credentials</code> entries, and the password is fed to <code>security</code> over its input stream, never as a visible command-line argument. Versions before 0.2.4 skipped this step on Macs whose username isn't an email address; update if you still get prompts.</p>
+        <p><a href="/claude-code-keychain-password-prompt/">Full explanation and commands.</a> Claude Code periodically rewrites its own Keychain entry, which resets that entry's access list — so "Always Allow" doesn't stick even for a stable, signed build. <em>Options → General → Keep Claude Code Keychain access working automatically</em> (on by default) fixes this: enter your login password once, and the app re-grants its own access every refresh cycle before it reads the credential. It only touches Claude Code's own <code>Claude Code-credentials</code> entries, and the password is fed to <code>security</code> over its input stream, never as a visible command-line argument. Versions before 0.2.4 skipped this step on Macs whose username isn't an email address; update if you still get prompts.</p>
       </details>
       <details>
         <summary><span>How do I know this copy of the app hasn't been tampered with?</span></summary>
@@ -403,7 +403,7 @@ brew install --cask claude-status" aria-label="Copy install command">Copy</butto
       </details>
       <details>
         <summary><span>Pricing for "API-equivalent cost"?</span></summary>
-        <p>The dropdown shows what a given token mix <em>would</em> cost on the Anthropic API. On a plan, you're not actually billed per token — but the figure is a useful comparison. Rates are public list pricing.</p>
+        <p><a href="/claude-code-cost-tracking/">How it is computed.</a> The dropdown shows what a given token mix <em>would</em> cost on the Anthropic API. On a plan, you're not actually billed per token — but the figure is a useful comparison. Rates are public list pricing.</p>
       </details>
     </div>
   </div>
@@ -419,6 +419,15 @@ brew install --cask claude-status" aria-label="Copy install command">Copy</butto
         <strong>Claude Status</strong>
       </div>
       <p class="footer-tag">macOS menu bar for Claude Code usage.</p>
+    </div>
+    <div>
+      <h4>Guides</h4>
+      <ul>
+        <li><a href="/claude-code-usage-limits/">Usage limits</a></li>
+        <li><a href="/claude-code-cost-tracking/">Cost tracking</a></li>
+        <li><a href="/claude-code-keychain-password-prompt/">Keychain prompts fix</a></li>
+        <li><a href="/claude-code-enterprise-extra-usage/">Enterprise Extra Usage</a></li>
+      </ul>
     </div>
     <div>
       <h4>Project</h4>

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-VPXE38XTRB"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-VPXE38XTRB');
+  </script>
+
+  <title>Fix repeated macOS Keychain password prompts with Claude Code · Claude Status</title>
+  <meta name="description" content="Why macOS keeps asking for your Keychain password when an app reads the Claude Code-credentials item, and how to stop it. Includes the security commands and an automatic fix.">
+  <link rel="canonical" href="https://claudestatus.runlocal.dev/claude-code-keychain-password-prompt/">
+
+  <meta name="theme-color" content="#d97757" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1a1613" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light dark">
+  <meta name="author" content="Baptiste Collard">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Claude Status">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:url" content="https://claudestatus.runlocal.dev/claude-code-keychain-password-prompt/">
+  <meta property="og:title" content="Fix repeated macOS Keychain password prompts with Claude Code">
+  <meta property="og:description" content="Why macOS keeps asking for your Keychain password when an app reads the Claude Code-credentials item, and how to stop it. Includes the security commands and an automatic fix.">
+  <meta property="og:image" content="https://claudestatus.runlocal.dev/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Fix repeated macOS Keychain password prompts with Claude Code">
+  <meta name="twitter:description" content="Why macOS keeps asking for your Keychain password when an app reads the Claude Code-credentials item, and how to stop it. Includes the security commands and an automatic fix.">
+  <meta name="twitter:image" content="https://claudestatus.runlocal.dev/assets/og-image.png">
+
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="apple-touch-icon" href="/assets/favicon.svg">
+
+  <link rel="stylesheet" href="/styles.css?v=v0.2.4">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Fix repeated Keychain password prompts for Claude Code credentials",
+    "description": "Why macOS keeps asking for your Keychain password when an app reads the Claude Code-credentials item, and how to stop it. Includes the security commands and an automatic fix.",
+    "url": "https://claudestatus.runlocal.dev/claude-code-keychain-password-prompt/",
+    "mainEntityOfPage": "https://claudestatus.runlocal.dev/claude-code-keychain-password-prompt/",
+    "inLanguage": "en",
+    "author": {
+      "@type": "Person",
+      "name": "Baptiste Collard"
+    },
+    "dateModified": "2026-10-18",
+    "datePublished": "2026-10-18",
+    "image": "https://claudestatus.runlocal.dev/assets/og-image.png",
+    "about": {
+      "@type": "SoftwareApplication",
+      "name": "Claude Status",
+      "url": "https://claudestatus.runlocal.dev/"
+    }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Claude Status",
+        "item": "https://claudestatus.runlocal.dev/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Keychain prompts fix",
+        "item": "https://claudestatus.runlocal.dev/claude-code-keychain-password-prompt/"
+      }
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Why does macOS keep asking for my Keychain password for Claude Code?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Claude Code rewrites its credential item on each token refresh and resets the item's partition list, so apps that were granted access are prompted again."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I stop the prompts without a third-party app?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Not permanently. The partition list can be re-granted with the security command, but it needs the keychain password each time and Claude Code resets it on the next write."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is it safe to store my keychain password in the app?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "It is stored in a dedicated Keychain item created by the app and passed to security over standard input. It can be deleted with Forget Stored Password, and the feature only touches Claude Code's own credential items."
+        }
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+
+<nav class="nav">
+  <a class="brand" href="/" aria-label="Claude Status">
+    <span class="brand-mark" aria-hidden="true">
+      <img src="/assets/asterisk.svg" width="22" height="22" alt="">
+    </span>
+    <strong>Claude Status</strong>
+  </a>
+  <div class="nav-right">
+    <a href="/#features">Features</a>
+    <a href="/#install">Install</a>
+    <a href="/#faq">FAQ</a>
+    <a href="https://github.com/bcollard/claude-status-macos-menu-bar" class="nav-github" target="_blank" rel="noopener">
+      GitHub →
+    </a>
+    <a href="https://github.com/bcollard/claude-status-macos-menu-bar/releases/tag/v0.2.4" class="nav-version" target="_blank" rel="noopener" title="Latest release">v0.2.4</a>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+      <span class="sun">☀</span>
+      <span class="moon">☾</span>
+    </button>
+  </div>
+</nav>
+
+<main class="section article">
+  <div class="container prose">
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Claude Status</a> <span aria-hidden="true">/</span> <span>Keychain prompts fix</span></nav>
+    <h1>Fix repeated Keychain password prompts for Claude Code credentials</h1>
+    <p class="section-lede">If a tool that reads the <code>Claude Code-credentials</code> Keychain item asks for your login password every few hours, the cause is how Claude Code writes that item. This page explains it and lists the fixes.</p>
+
+<h2>Why the prompt comes back</h2>
+<p>Each Keychain item has a partition list: the code-signing Team IDs allowed to read it without a prompt. Clicking <em>Always Allow</em> adds the requesting app to that list for that item only.</p>
+<p>Claude Code rewrites its credential item whenever it refreshes the OAuth token, about every eight hours. The rewrite resets the partition list so it trusts only Anthropic's Team ID. Any other app, including a signed and notarized one, is prompted again.</p>
+<table>
+  <thead><tr><th>Trigger</th><th>Effect</th></tr></thead>
+  <tbody>
+    <tr><td>Token refresh in Claude Code</td><td>Item updated in place, partition list reset</td></tr>
+    <tr><td><code>claude /logout</code> then login</td><td>Item recreated, no third-party trust</td></tr>
+    <tr><td>Rebuilding an ad-hoc signed app</td><td>New binary hash, earlier grants no longer apply</td></tr>
+  </tbody>
+</table>
+
+<h2>Inspect the items</h2>
+<p>Several <code>Claude Code-credentials</code> items can accumulate on one Mac, for example from older Claude Code builds or a renamed user. List the items without reading secrets:</p>
+<pre><code>security dump-keychain login.keychain-db | grep -A4 'Claude Code-credentials'</code></pre>
+<p>Remove a stale one. This logs Claude Code out if you remove the item in use:</p>
+<pre><code>security delete-generic-password -s "Claude Code-credentials" -a "&lt;account&gt;"</code></pre>
+
+<h2>Stop the prompts</h2>
+<ol>
+  <li>Open <em>Options → General</em> in Claude Status and keep <em>Keep Claude Code Keychain access working automatically</em> on.</li>
+  <li>Enter your login keychain password once. It is verified, then stored in a separate Keychain item that only Claude Status reads.</li>
+  <li>Each refresh cycle, before reading the credential, the app re-adds its own Team ID to the item's partition list using <code>security set-generic-password-partition-list</code>. The password goes to <code>security</code> over standard input, not as a command-line argument visible in <code>ps</code>.</li>
+</ol>
+<p>The fix is limited to Claude Code's own credential items. <em>Forget Stored Password</em> in Settings or Diagnostics removes the stored password and turns the feature off.</p>
+<p>Use <em>Options → Diagnostics</em> to see every credential entry, which one is in use, and a copy-ready removal command for the others. The pane never shows token values.</p>
+<p>Versions before 0.2.4 skipped the automation on Macs whose username is not an email address. Update if you still see prompts.</p>
+
+<h2>Install</h2>
+<div class="install-cmd">
+        <pre><code><span class="prompt">$</span> brew tap bcollard/claude-status
+<span class="prompt">$</span> brew trust --tap bcollard/claude-status
+<span class="prompt">$</span> brew install --cask claude-status</code></pre>
+      </div>
+
+    <h2>Questions</h2>
+    <div class="faq-list">
+      <details>
+        <summary><span>Why does macOS keep asking for my Keychain password for Claude Code?</span></summary>
+        <p>Claude Code rewrites its credential item on each token refresh and resets the item&#x27;s partition list, so apps that were granted access are prompted again.</p>
+      </details>
+      <details>
+        <summary><span>Can I stop the prompts without a third-party app?</span></summary>
+        <p>Not permanently. The partition list can be re-granted with the security command, but it needs the keychain password each time and Claude Code resets it on the next write.</p>
+      </details>
+      <details>
+        <summary><span>Is it safe to store my keychain password in the app?</span></summary>
+        <p>It is stored in a dedicated Keychain item created by the app and passed to security over standard input. It can be deleted with Forget Stored Password, and the feature only touches Claude Code&#x27;s own credential items.</p>
+      </details>
+    </div>
+
+    <h2>Related guides</h2>
+    <ul>
+      <li><a href="/claude-code-usage-limits/">Check your Claude Code usage limits from the macOS menu bar</a></li>
+      <li><a href="/claude-code-enterprise-extra-usage/">Monitor Claude Code Enterprise Extra Usage and monthly spend</a></li>
+      <li><a href="/">Claude Status overview and install</a></li>
+    </ul>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container footer-grid">
+    <div>
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <img src="/assets/asterisk.svg" width="22" height="22" alt="">
+        </span>
+        <strong>Claude Status</strong>
+      </div>
+      <p class="footer-tag">macOS menu bar for Claude Code usage.</p>
+    </div>
+    <div>
+      <h4>Guides</h4>
+      <ul>
+        <li><a href="/claude-code-usage-limits/">Usage limits</a></li>
+        <li><a href="/claude-code-cost-tracking/">Cost tracking</a></li>
+        <li><a href="/claude-code-keychain-password-prompt/">Keychain prompts fix</a></li>
+        <li><a href="/claude-code-enterprise-extra-usage/">Enterprise Extra Usage</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Project</h4>
+      <ul>
+        <li><a href="https://github.com/bcollard/claude-status-macos-menu-bar" target="_blank" rel="noopener">GitHub repo</a></li>
+        <li><a href="https://github.com/bcollard/claude-status-macos-menu-bar/releases" target="_blank" rel="noopener">Releases</a></li>
+        <li><a href="https://github.com/bcollard/claude-status-macos-menu-bar/issues" target="_blank" rel="noopener">Issues &amp; feedback</a></li>
+        <li>Not affiliated with Anthropic.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="copy">© 2026 · Built with care · <a href="https://github.com/bcollard/claude-status-macos-menu-bar" target="_blank" rel="noopener">Audit the source</a></p>
+</footer>
+
+<script>
+  (function() {
+    const root = document.documentElement;
+    const btn = document.getElementById('themeToggle');
+    let stored = null;
+    try { stored = localStorage.getItem('cs-theme'); } catch (e) {}
+    if (stored) root.setAttribute('data-theme', stored);
+    btn.addEventListener('click', () => {
+      const cur = root.getAttribute('data-theme') || 'auto';
+      const next = cur === 'auto' ? 'light' : cur === 'light' ? 'dark' : 'auto';
+      root.setAttribute('data-theme', next);
+      try {
+        if (next === 'auto') localStorage.removeItem('cs-theme');
+        else localStorage.setItem('cs-theme', next);
+      } catch (e) {}
+    });
+  })();
+</script>
+
+</body>
+</html>

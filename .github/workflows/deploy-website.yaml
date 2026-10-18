@@ -52,6 +52,7 @@ jobs:
           gsutil -m setmeta -h 'Cache-Control:public, max-age=600' "gs://${BUCKET}/index.html" || true
           gsutil -m setmeta -h 'Cache-Control:public, max-age=600' "gs://${BUCKET}/404.html"   || true
           gsutil -m setmeta -h 'Cache-Control:public, max-age=600' "gs://${BUCKET}/styles.css" || true
+          gsutil -m setmeta -h 'Cache-Control:public, max-age=600' "gs://${BUCKET}/**/index.html" || true
           # Longer cache for images / fonts — they're versioned implicitly by name.
           gsutil -m setmeta -h 'Cache-Control:public, max-age=86400' "gs://${BUCKET}/assets/**.png" || true
           gsutil -m setmeta -h 'Cache-Control:public, max-age=86400' "gs://${BUCKET}/assets/**.svg" || true

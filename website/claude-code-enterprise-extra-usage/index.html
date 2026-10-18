@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-VPXE38XTRB"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-VPXE38XTRB');
+  </script>
+
+  <title>Claude Code Enterprise Extra Usage: monitor monthly spend · Claude Status</title>
+  <meta name="description" content="Enterprise Claude Code accounts have no five-hour or weekly meter. See how Extra Usage credits, the monthly limit and spend in USD are reported, and how to watch them live.">
+  <link rel="canonical" href="https://claudestatus.runlocal.dev/claude-code-enterprise-extra-usage/">
+
+  <meta name="theme-color" content="#d97757" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1a1613" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light dark">
+  <meta name="author" content="Baptiste Collard">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Claude Status">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:url" content="https://claudestatus.runlocal.dev/claude-code-enterprise-extra-usage/">
+  <meta property="og:title" content="Claude Code Enterprise Extra Usage: monitor monthly spend">
+  <meta property="og:description" content="Enterprise Claude Code accounts have no five-hour or weekly meter. See how Extra Usage credits, the monthly limit and spend in USD are reported, and how to watch them live.">
+  <meta property="og:image" content="https://claudestatus.runlocal.dev/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Claude Code Enterprise Extra Usage: monitor monthly spend">
+  <meta name="twitter:description" content="Enterprise Claude Code accounts have no five-hour or weekly meter. See how Extra Usage credits, the monthly limit and spend in USD are reported, and how to watch them live.">
+  <meta name="twitter:image" content="https://claudestatus.runlocal.dev/assets/og-image.png">
+
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="apple-touch-icon" href="/assets/favicon.svg">
+
+  <link rel="stylesheet" href="/styles.css?v=v0.2.4">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Monitor Claude Code Enterprise Extra Usage and monthly spend",
+    "description": "Enterprise Claude Code accounts have no five-hour or weekly meter. See how Extra Usage credits, the monthly limit and spend in USD are reported, and how to watch them live.",
+    "url": "https://claudestatus.runlocal.dev/claude-code-enterprise-extra-usage/",
+    "mainEntityOfPage": "https://claudestatus.runlocal.dev/claude-code-enterprise-extra-usage/",
+    "inLanguage": "en",
+    "author": {
+      "@type": "Person",
+      "name": "Baptiste Collard"
+    },
+    "dateModified": "2026-10-18",
+    "datePublished": "2026-10-18",
+    "image": "https://claudestatus.runlocal.dev/assets/og-image.png",
+    "about": {
+      "@type": "SoftwareApplication",
+      "name": "Claude Status",
+      "url": "https://claudestatus.runlocal.dev/"
+    }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Claude Status",
+        "item": "https://claudestatus.runlocal.dev/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Enterprise Extra Usage",
+        "item": "https://claudestatus.runlocal.dev/claude-code-enterprise-extra-usage/"
+      }
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Why does Claude Code on Enterprise show no five-hour or weekly limit?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Enterprise pools are admin-managed. The usage endpoint returns null for those buckets and reports monthly Extra Usage credits instead."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Are Extra Usage amounts in dollars or cents?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "The API returns minor units (cents). A monthly_limit of 25000 means $250.00."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How do I see Enterprise Claude Code spend without opening claude.ai?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Install Claude Status. The menu bar shows the Extra Usage percentage and dollars spent, and it refreshes on the cadence you choose."
+        }
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+
+<nav class="nav">
+  <a class="brand" href="/" aria-label="Claude Status">
+    <span class="brand-mark" aria-hidden="true">
+      <img src="/assets/asterisk.svg" width="22" height="22" alt="">
+    </span>
+    <strong>Claude Status</strong>
+  </a>
+  <div class="nav-right">
+    <a href="/#features">Features</a>
+    <a href="/#install">Install</a>
+    <a href="/#faq">FAQ</a>
+    <a href="https://github.com/bcollard/claude-status-macos-menu-bar" class="nav-github" target="_blank" rel="noopener">
+      GitHub →
+    </a>
+    <a href="https://github.com/bcollard/claude-status-macos-menu-bar/releases/tag/v0.2.4" class="nav-version" target="_blank" rel="noopener" title="Latest release">v0.2.4</a>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+      <span class="sun">☀</span>
+      <span class="moon">☾</span>
+    </button>
+  </div>
+</nav>
+
+<main class="section article">
+  <div class="container prose">
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Claude Status</a> <span aria-hidden="true">/</span> <span>Enterprise Extra Usage</span></nav>
+    <h1>Monitor Claude Code Enterprise Extra Usage and monthly spend</h1>
+    <p class="section-lede">On Claude Enterprise, Claude Code usage is governed by a monthly Extra Usage budget set by your admin. This page explains the fields and how to keep the figure visible.</p>
+
+<h2>What the Enterprise usage response contains</h2>
+<p>The OAuth usage endpoint returns <code>null</code> for the standard buckets on Enterprise (<code>five_hour</code>, <code>seven_day</code> and the per-model weekly pools). The relevant block is <code>extra_usage</code>:</p>
+<pre><code>"extra_usage": {
+  "is_enabled":    true,
+  "monthly_limit": 25000,
+  "used_credits":  16000.0,
+  "utilization":   64.0,
+  "currency":      "USD"
+}</code></pre>
+<ul>
+  <li><code>monthly_limit</code> and <code>used_credits</code> are in minor units (cents). <code>25000</code> is <strong>$250.00</strong>, not $25,000.</li>
+  <li><code>utilization</code> is already a percentage from 0 to 100.</li>
+  <li>The Keychain credential reports <code>subscriptionType: "enterprise"</code> and a rate-limit tier such as <code>default_claude_zero</code>. Pools are managed by an admin and there is no per-user weekly cap.</li>
+</ul>
+
+<h2>What Claude Status shows</h2>
+<ul>
+  <li>Menu bar title: <code>64% • $163</code> (utilization and rounded dollars spent).</li>
+  <li>Dropdown: an Extra Usage row with a progress bar, spend and limit in dollars.</li>
+  <li>Account header: email and organization name from <code>~/.claude.json</code>.</li>
+  <li>Per-model token breakdown for today and this week from local logs.</li>
+</ul>
+
+<h2>Notes for administrators and security teams</h2>
+<ul>
+  <li>The only network call is <code>api.anthropic.com/api/oauth/usage</code>, the endpoint Claude Code uses.</li>
+  <li>The app is open source, signed with a Developer ID and notarized. <em>Diagnostics → App Integrity</em> verifies this on the running copy.</li>
+  <li>No analytics or telemetry. The API call can be disabled with <em>Manual only</em> refresh.</li>
+</ul>
+
+<h2>Install</h2>
+<div class="install-cmd">
+        <pre><code><span class="prompt">$</span> brew tap bcollard/claude-status
+<span class="prompt">$</span> brew trust --tap bcollard/claude-status
+<span class="prompt">$</span> brew install --cask claude-status</code></pre>
+      </div>
+
+    <h2>Questions</h2>
+    <div class="faq-list">
+      <details>
+        <summary><span>Why does Claude Code on Enterprise show no five-hour or weekly limit?</span></summary>
+        <p>Enterprise pools are admin-managed. The usage endpoint returns null for those buckets and reports monthly Extra Usage credits instead.</p>
+      </details>
+      <details>
+        <summary><span>Are Extra Usage amounts in dollars or cents?</span></summary>
+        <p>The API returns minor units (cents). A monthly_limit of 25000 means $250.00.</p>
+      </details>
+      <details>
+        <summary><span>How do I see Enterprise Claude Code spend without opening claude.ai?</span></summary>
+        <p>Install Claude Status. The menu bar shows the Extra Usage percentage and dollars spent, and it refreshes on the cadence you choose.</p>
+      </details>
+    </div>
+
+    <h2>Related guides</h2>
+    <ul>
+      <li><a href="/claude-code-usage-limits/">Check your Claude Code usage limits from the macOS menu bar</a></li>
+      <li><a href="/claude-code-keychain-password-prompt/">Fix repeated Keychain password prompts for Claude Code credentials</a></li>
+      <li><a href="/">Claude Status overview and install</a></li>
+    </ul>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container footer-grid">
+    <div>
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <img src="/assets/asterisk.svg" width="22" height="22" alt="">
+        </span>
+        <strong>Claude Status</strong>
+      </div>
+      <p class="footer-tag">macOS menu bar for Claude Code usage.</p>
+    </div>
+    <div>
+      <h4>Guides</h4>
+      <ul>
+        <li><a href="/claude-code-usage-limits/">Usage limits</a></li>
+        <li><a href="/claude-code-cost-tracking/">Cost tracking</a></li>
+        <li><a href="/claude-code-keychain-password-prompt/">Keychain prompts fix</a></li>
+        <li><a href="/claude-code-enterprise-extra-usage/">Enterprise Extra Usage</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Project</h4>
+      <ul>
+        <li><a href="https://github.com/bcollard/claude-status-macos-menu-bar" target="_blank" rel="noopener">GitHub repo</a></li>
+        <li><a href="https://github.com/bcollard/claude-status-macos-menu-bar/releases" target="_blank" rel="noopener">Releases</a></li>
+        <li><a href="https://github.com/bcollard/claude-status-macos-menu-bar/issues" target="_blank" rel="noopener">Issues &amp; feedback</a></li>
+        <li>Not affiliated with Anthropic.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="copy">© 2026 · Built with care · <a href="https://github.com/bcollard/claude-status-macos-menu-bar" target="_blank" rel="noopener">Audit the source</a></p>
+</footer>
+
+<script>
+  (function() {
+    const root = document.documentElement;
+    const btn = document.getElementById('themeToggle');
+    let stored = null;
+    try { stored = localStorage.getItem('cs-theme'); } catch (e) {}
+    if (stored) root.setAttribute('data-theme', stored);
+    btn.addEventListener('click', () => {
+      const cur = root.getAttribute('data-theme') || 'auto';
+      const next = cur === 'auto' ? 'light' : cur === 'light' ? 'dark' : 'auto';
+      root.setAttribute('data-theme', next);
+      try {
+        if (next === 'auto') localStorage.removeItem('cs-theme');
+        else localStorage.setItem('cs-theme', next);
+      } catch (e) {}
+    });
+  })();
+</script>
+
+</body>
+</html>

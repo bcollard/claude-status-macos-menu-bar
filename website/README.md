@@ -1,6 +1,6 @@
 # claudestatus.runlocal.dev
 
-Single-page marketing site for the Claude Status macOS menu-bar app.
+Marketing site (landing page plus SEO guide pages under `/claude-code-*/`) for the Claude Status macOS menu-bar app.
 Hand-rolled HTML/CSS — no SSG, no framework, no JS dependencies. Served
 as static files from a Google Cloud Storage bucket.
 

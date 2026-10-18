@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-VPXE38XTRB"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-VPXE38XTRB');
+  </script>
+
+  <title>Check Claude Code usage limits on Mac — 5-hour and weekly · Claude Status</title>
+  <meta name="description" content="See your Claude Code five-hour and weekly usage limits, reset times and extra usage at a glance. Where the numbers come from and how to keep them in your Mac menu bar.">
+  <link rel="canonical" href="https://claudestatus.runlocal.dev/claude-code-usage-limits/">
+
+  <meta name="theme-color" content="#d97757" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1a1613" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light dark">
+  <meta name="author" content="Baptiste Collard">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Claude Status">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:url" content="https://claudestatus.runlocal.dev/claude-code-usage-limits/">
+  <meta property="og:title" content="Check Claude Code usage limits on Mac — 5-hour and weekly">
+  <meta property="og:description" content="See your Claude Code five-hour and weekly usage limits, reset times and extra usage at a glance. Where the numbers come from and how to keep them in your Mac menu bar.">
+  <meta property="og:image" content="https://claudestatus.runlocal.dev/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Check Claude Code usage limits on Mac — 5-hour and weekly">
+  <meta name="twitter:description" content="See your Claude Code five-hour and weekly usage limits, reset times and extra usage at a glance. Where the numbers come from and how to keep them in your Mac menu bar.">
+  <meta name="twitter:image" content="https://claudestatus.runlocal.dev/assets/og-image.png">
+
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="apple-touch-icon" href="/assets/favicon.svg">
+
+  <link rel="stylesheet" href="/styles.css?v=v0.2.4">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Check your Claude Code usage limits from the macOS menu bar",
+    "description": "See your Claude Code five-hour and weekly usage limits, reset times and extra usage at a glance. Where the numbers come from and how to keep them in your Mac menu bar.",
+    "url": "https://claudestatus.runlocal.dev/claude-code-usage-limits/",
+    "mainEntityOfPage": "https://claudestatus.runlocal.dev/claude-code-usage-limits/",
+    "inLanguage": "en",
+    "author": {
+      "@type": "Person",
+      "name": "Baptiste Collard"
+    },
+    "dateModified": "2026-10-18",
+    "datePublished": "2026-10-18",
+    "image": "https://claudestatus.runlocal.dev/assets/og-image.png",
+    "about": {
+      "@type": "SoftwareApplication",
+      "name": "Claude Status",
+      "url": "https://claudestatus.runlocal.dev/"
+    }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Claude Status",
+        "item": "https://claudestatus.runlocal.dev/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Usage limits",
+        "item": "https://claudestatus.runlocal.dev/claude-code-usage-limits/"
+      }
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How do I check my Claude Code usage limit?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Run /usage inside Claude Code, open claude.ai/settings/usage, or install Claude Status to keep the five-hour and weekly percentages in the macOS menu bar."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What is the Claude Code five-hour limit?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "A rolling usage window on Pro and Max plans. The usage endpoint reports its utilization as a percentage and the time it resets."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does Claude Status show the same numbers as claude.ai?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. It reads the same usage endpoint that Claude Code uses, so the percentages match claude.ai/settings/usage."
+        }
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+
+<nav class="nav">
+  <a class="brand" href="/" aria-label="Claude Status">
+    <span class="brand-mark" aria-hidden="true">
+      <img src="/assets/asterisk.svg" width="22" height="22" alt="">
+    </span>
+    <strong>Claude Status</strong>
+  </a>
+  <div class="nav-right">
+    <a href="/#features">Features</a>
+    <a href="/#install">Install</a>
+    <a href="/#faq">FAQ</a>
+    <a href="https://github.com/bcollard/claude-status-macos-menu-bar" class="nav-github" target="_blank" rel="noopener">
+      GitHub →
+    </a>
+    <a href="https://github.com/bcollard/claude-status-macos-menu-bar/releases/tag/v0.2.4" class="nav-version" target="_blank" rel="noopener" title="Latest release">v0.2.4</a>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+      <span class="sun">☀</span>
+      <span class="moon">☾</span>
+    </button>
+  </div>
+</nav>
+
+<main class="section article">
+  <div class="container prose">
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Claude Status</a> <span aria-hidden="true">/</span> <span>Usage limits</span></nav>
+    <h1>Check your Claude Code usage limits from the macOS menu bar</h1>
+    <p class="section-lede">Claude Code does not show a persistent meter for your plan limits. This page explains which limits exist on each plan, where to read them, and how to keep them visible in the macOS menu bar.</p>
+
+<h2>Which limits apply to your plan</h2>
+<table>
+  <thead><tr><th>Plan</th><th>What the usage endpoint reports</th></tr></thead>
+  <tbody>
+    <tr><td>Pro, Max</td><td>Five-hour utilization and seven-day utilization, each with a reset time. Some accounts also get per-model weekly buckets.</td></tr>
+    <tr><td>Team</td><td>Same buckets as Pro and Max where the plan exposes them.</td></tr>
+    <tr><td>Enterprise</td><td>Usually no five-hour or weekly buckets. Monthly Extra Usage credits with a spend limit and a utilization percentage.</td></tr>
+  </tbody>
+</table>
+<p>Credit-based models can populate Extra Usage on a Pro account <em>in addition to</em> the five-hour and weekly buckets. Claude Status shows all of them.</p>
+
+<h2>Where to read the numbers</h2>
+<ul>
+  <li><strong>claude.ai/settings/usage</strong> — the web page. Accurate, but you have to open a browser.</li>
+  <li><strong>Inside Claude Code</strong> — the <code>/usage</code> command prints the current limits on request.</li>
+  <li><strong>Menu bar</strong> — Claude Status polls the same endpoint Claude Code uses and keeps the figures next to the clock.</li>
+</ul>
+
+<h2>What the menu bar shows</h2>
+<table>
+  <thead><tr><th>Account</th><th>Menu bar title</th></tr></thead>
+  <tbody>
+    <tr><td>Pro or Max</td><td><code>5h 13% • wk 2%</code></td></tr>
+    <tr><td>Pro with Extra Usage</td><td><code>5h 84% • wk 19% • $32</code></td></tr>
+    <tr><td>Enterprise</td><td><code>64% • $163</code></td></tr>
+    <tr><td>No API data</td><td>Today's token count, for example <code>2.7M</code></td></tr>
+  </tbody>
+</table>
+<p>The dropdown adds a progress bar per bucket. Colors change at 60% (orange) and 85% (red) so you can read the state without reading the numbers.</p>
+
+<h2>Where the data comes from</h2>
+<p>Claude Status calls <code>GET api.anthropic.com/api/oauth/usage</code> with the OAuth token Claude Code already stored in your macOS Keychain. It is the same call Claude Code makes. The default cadence is every five minutes. On a <code>429</code> it honors <code>Retry-After</code> and keeps the last good values on screen.</p>
+<p>You can set the cadence in <em>Options → Refresh</em> or switch to <em>Manual only</em> to disable the API call. Local token charts keep working either way.</p>
+
+<h2>Install</h2>
+<div class="install-cmd">
+        <pre><code><span class="prompt">$</span> brew tap bcollard/claude-status
+<span class="prompt">$</span> brew trust --tap bcollard/claude-status
+<span class="prompt">$</span> brew install --cask claude-status</code></pre>
+      </div>
+<p>Requires macOS 14 or later. See the <a href="/#install">install notes</a>.</p>
+
+    <h2>Questions</h2>
+    <div class="faq-list">
+      <details>
+        <summary><span>How do I check my Claude Code usage limit?</span></summary>
+        <p>Run /usage inside Claude Code, open claude.ai/settings/usage, or install Claude Status to keep the five-hour and weekly percentages in the macOS menu bar.</p>
+      </details>
+      <details>
+        <summary><span>What is the Claude Code five-hour limit?</span></summary>
+        <p>A rolling usage window on Pro and Max plans. The usage endpoint reports its utilization as a percentage and the time it resets.</p>
+      </details>
+      <details>
+        <summary><span>Does Claude Status show the same numbers as claude.ai?</span></summary>
+        <p>Yes. It reads the same usage endpoint that Claude Code uses, so the percentages match claude.ai/settings/usage.</p>
+      </details>
+    </div>
+
+    <h2>Related guides</h2>
+    <ul>
+      <li><a href="/claude-code-enterprise-extra-usage/">Monitor Claude Code Enterprise Extra Usage and monthly spend</a></li>
+      <li><a href="/claude-code-cost-tracking/">Track Claude Code token usage and API-equivalent cost</a></li>
+      <li><a href="/">Claude Status overview and install</a></li>
+    </ul>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container footer-grid">
+    <div>
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <img src="/assets/asterisk.svg" width="22" height="22" alt="">
+        </span>
+        <strong>Claude Status</strong>
+      </div>
+      <p class="footer-tag">macOS menu bar for Claude Code usage.</p>
+    </div>
+    <div>
+      <h4>Guides</h4>
+      <ul>
+        <li><a href="/claude-code-usage-limits/">Usage limits</a></li>
+        <li><a href="/claude-code-cost-tracking/">Cost tracking</a></li>
+        <li><a href="/claude-code-keychain-password-prompt/">Keychain prompts fix</a></li>
+        <li><a href="/claude-code-enterprise-extra-usage/">Enterprise Extra Usage</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Project</h4>
+      <ul>
+        <li><a href="https://github.com/bcollard/claude-status-macos-menu-bar" target="_blank" rel="noopener">GitHub repo</a></li>
+        <li><a href="https://github.com/bcollard/claude-status-macos-menu-bar/releases" target="_blank" rel="noopener">Releases</a></li>
+        <li><a href="https://github.com/bcollard/claude-status-macos-menu-bar/issues" target="_blank" rel="noopener">Issues &amp; feedback</a></li>
+        <li>Not affiliated with Anthropic.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="copy">© 2026 · Built with care · <a href="https://github.com/bcollard/claude-status-macos-menu-bar" target="_blank" rel="noopener">Audit the source</a></p>
+</footer>
+
+<script>
+  (function() {
+    const root = document.documentElement;
+    const btn = document.getElementById('themeToggle');
+    let stored = null;
+    try { stored = localStorage.getItem('cs-theme'); } catch (e) {}
+    if (stored) root.setAttribute('data-theme', stored);
+    btn.addEventListener('click', () => {
+      const cur = root.getAttribute('data-theme') || 'auto';
+      const next = cur === 'auto' ? 'light' : cur === 'light' ? 'dark' : 'auto';
+      root.setAttribute('data-theme', next);
+      try {
+        if (next === 'auto') localStorage.removeItem('cs-theme');
+        else localStorage.setItem('cs-theme', next);
+      } catch (e) {}
+    });
+  })();
+</script>
+
+</body>
+</html>
