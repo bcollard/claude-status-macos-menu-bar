@@ -6,7 +6,14 @@ struct ModelUsage: Sendable {
     var outputTokens: Int = 0
     var cacheReadTokens: Int = 0
     var cacheCreateTokens: Int = 0
+    /// Subset of `cacheCreateTokens` written with the 1-hour TTL (billed 2×
+    /// input instead of 1.25×). From `usage.cache_creation.ephemeral_1h_input_tokens`.
+    var cacheCreate1hTokens: Int = 0
+    var webSearchRequests: Int = 0
     var messageCount: Int = 0
+    /// Sum of per-turn `Pricing.cost(_:model:)`. Set by the scanner; `nil`
+    /// for hand-built rows (demo data), which `Pricing` estimates instead.
+    var costUSD: Double? = nil
 
     var totalTokens: Int { inputTokens + outputTokens + cacheReadTokens + cacheCreateTokens }
 
@@ -130,12 +137,34 @@ enum SessionLogScanner {
         let model = modelName ?? "unknown"
         if model == "<synthetic>" { return }
 
+        let turn = turnUsage(from: usage)
         var mu = window.byModel[model] ?? ModelUsage(model: model)
-        mu.inputTokens += (usage["input_tokens"] as? Int) ?? 0
-        mu.outputTokens += (usage["output_tokens"] as? Int) ?? 0
-        mu.cacheReadTokens += (usage["cache_read_input_tokens"] as? Int) ?? 0
-        mu.cacheCreateTokens += (usage["cache_creation_input_tokens"] as? Int) ?? 0
+        mu.inputTokens += turn.input
+        mu.outputTokens += turn.output
+        mu.cacheReadTokens += turn.cacheRead
+        mu.cacheCreateTokens += turn.cacheWrite5m + turn.cacheWrite1h
+        mu.cacheCreate1hTokens += turn.cacheWrite1h
+        mu.webSearchRequests += turn.webSearchRequests
         mu.messageCount += 1
+        mu.costUSD = (mu.costUSD ?? 0) + Pricing.cost(turn, model: model)
         window.byModel[model] = mu
+    }
+
+    /// Parses one `usage` block. Top-level totals only — `usage.iterations[]`
+    /// breaks the same turn down per step and would double-count.
+    static func turnUsage(from usage: [String: Any]) -> TurnUsage {
+        var t = TurnUsage()
+        t.input = (usage["input_tokens"] as? Int) ?? 0
+        t.output = (usage["output_tokens"] as? Int) ?? 0
+        t.cacheRead = (usage["cache_read_input_tokens"] as? Int) ?? 0
+        let cacheWriteTotal = (usage["cache_creation_input_tokens"] as? Int) ?? 0
+        // Older logs have no TTL split: price the whole write at the 5m rate.
+        let oneHour = ((usage["cache_creation"] as? [String: Any])?["ephemeral_1h_input_tokens"] as? Int) ?? 0
+        t.cacheWrite1h = min(oneHour, cacheWriteTotal)
+        t.cacheWrite5m = cacheWriteTotal - t.cacheWrite1h
+        t.webSearchRequests = ((usage["server_tool_use"] as? [String: Any])?["web_search_requests"] as? Int) ?? 0
+        t.fast = (usage["speed"] as? String) == "fast"
+        t.usOnlyInference = (usage["inference_geo"] as? String) == "us"
+        return t
     }
 }

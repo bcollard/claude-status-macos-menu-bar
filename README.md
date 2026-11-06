@@ -1,6 +1,6 @@
 # Claude Status
 
-> macOS menu bar app for Claude Code usage. Live plan limits, today's spend, weekly cap, and per-model breakdown — without leaving the keyboard.
+> macOS menu bar app for Claude Code usage on Pro, Max, Team and **Enterprise**. 5-hour and weekly limits, Enterprise Extra Usage spend in USD, and per-model breakdown — without leaving the keyboard.
 
 ![macOS 14+](https://img.shields.io/badge/macOS-14%2B-black?logo=apple)
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange?logo=swift)

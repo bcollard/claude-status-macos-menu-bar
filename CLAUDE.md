@@ -136,6 +136,21 @@ top-level or nested under `message`:
 filters by `timestamp >= since` (falls back to file mtime), drops
 `model == "<synthetic>"`, and aggregates per-model totals.
 
+Cost is computed **per turn**, not from the aggregates
+(`SessionLogScanner.turnUsage(from:)` → `Pricing.cost(_:model:)`, summed
+into `ModelUsage.costUSD`), because some pricing rules apply per request.
+Fields in the `usage` block (observed 2026-11, Claude Code 2.1.316):
+
+| Field | Used for |
+|---|---|
+| `input_tokens`, `output_tokens`, `cache_read_input_tokens`, `cache_creation_input_tokens` | token counts |
+| `cache_creation.ephemeral_1h_input_tokens` / `ephemeral_5m_input_tokens` | 1h cache writes bill 2× input, 5m writes 1.25×. Claude Code writes mostly 1h. Missing on older logs, so all writes are priced at 5m. |
+| `server_tool_use.web_search_requests` | $10 per 1,000 searches (`web_fetch_requests` has no per-call charge) |
+| `speed` (`standard` / `fast`) | fast mode = 2× |
+| `inference_geo` (`global` / `us`) | `us` = 1.1× |
+| `iterations[]` | **ignored**: per-step breakdown of the same turn; summing it would double-count |
+| `service_tier`, `output_tokens_details.thinking_tokens`, `fallback_credit` | not used |
+
 ### Keychain entry — `Claude Code-credentials`
 
 The OAuth blob stored by Claude Code:
@@ -335,6 +350,11 @@ Refresh endpoint: `https://platform.claude.com/v1/oauth/token`. We do
   `$250.00`, not `$25,000`. (Confirmed by cross-checking
   https://claude.ai/settings/usage.)
 - `utilization` is already a percentage (0-100), not a fraction.
+- `seven_day_overage_included` — found in Claude Code 2.1.316, which
+  treats it as a peer of `five_hour`/`seven_day` in its rate-limit
+  display. Not yet seen in a live response. Rendered as
+  "Weekly · incl. overage". It also feeds the menu bar `wk` figure, but
+  only when `seven_day` is null.
 - `tangelo`, `iguana_necktie`, `omelette_promotional`, `seven_day_omelette`
   look like Anthropic internal codenames for various pools — we don't render
   them unless populated and non-zero.
@@ -553,9 +573,19 @@ the dropdown to reclaim space.
 
 ### 4. Pricing is a maintenance hot spot
 
-`Pricing.swift` hardcodes per-million-token rates for Opus / Sonnet /
-Haiku. Update when Anthropic publishes new pricing. On plan-based accounts
+`Pricing.swift` hardcodes per-million-token rates for each model version
+(Fable / Mythos / Opus / Sonnet / Haiku), copied from
+https://platform.claude.com/docs/en/about-claude/pricing. Update it when
+Anthropic publishes new pricing. Check the live page, not the
+cached model reference in Claude Code's bundled `claude-api` skill: that
+reference had the wrong Sonnet 5.5 cache-read price and no Haiku 5.5
+tier. Prices differ **within** a family (Opus 4.1 $15, Opus 4.5–5 $5,
+Opus 5.5 $4), and cache-read multipliers differ per model (0.1×, 0.05×
+on Opus/Sonnet 5.5, 0.025× on Fable/Mythos 5.1). On plan-based accounts
 the cost figure is **API-equivalent**, not what you pay.
+
+A model id that matches no entry costs **$0**, so every family has a bare
+fallback entry (`"opus"`, `"fable"`, …) priced like its newest version.
 
 ### 5. App Store distribution would require sandboxing
 
@@ -705,9 +735,16 @@ to `UserDefaults` under `apiRefreshChoice`. Default 5 min.
 ### Pricing
 
 Edit the `table` in `Pricing.swift`. Each entry is `(matchSubstring,
-ModelPricing(input, output, cacheRead, cacheWrite))` in USD per million
-tokens. The matcher uses a case-insensitive `contains` on the model id —
-first match wins.
+.standard(input:output:cacheRead:longPrompt:))` in USD per million
+tokens. `.standard` derives the cache-write prices: 5m = 1.25× input,
+1h = 2× input. The matcher uses a case-insensitive `contains` on the
+model id, and the first match wins. Put specific versions before the
+ids they are a prefix of: `opus-5-5` before `opus-5`, `fable-5-1`
+before `fable-5`.
+
+`longPrompt: (threshold, multiplier)` covers prompt-size tiers. Today
+only Haiku 5.5 has one: over 100K prompt tokens (input + cache read +
+cache write), every rate is 5×. It is applied per turn.
 
 ### Menu bar appearance
 
@@ -732,9 +769,15 @@ the .icns app icon are independent — changing one doesn't affect the other.
 
 ## Future work
 
-- **More plans in pricing.** If you start using older Sonnet/Haiku
-  variants the price table still matches by substring. If Anthropic ships
-  a new family (e.g. `claude-sonnet-5-x`), add a new entry.
+- **New models in pricing.** When Anthropic ships a new version, add a
+  specific entry and move the family fallback to its price. A new
+  *family* name needs a new fallback entry too, or it shows as $0.
+
+- **Demo data uses 4.x model ids.** `DemoData.swift` still lists Opus
+  4.7 / Sonnet 4.6 / Haiku 4.5, which are now priced at $5 / $3 / $1
+  input. If you regenerate the screenshots, the cost figures will be lower
+  than in the current PNGs. Consider moving the demo to the 5.5 ids at
+  the same time.
 
 - **Settings panel.** Refresh interval, what the menu bar title shows
   (extra-usage vs. today's tokens vs. weekly), color of the icon.

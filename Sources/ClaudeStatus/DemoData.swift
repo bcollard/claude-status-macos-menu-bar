@@ -18,18 +18,18 @@ enum DemoData {
 
         s.today = UsageWindow(
             byModel: [
-                "claude-opus-4-7": ModelUsage(
-                    model: "claude-opus-4-7",
+                "claude-opus-5-5": ModelUsage(
+                    model: "claude-opus-5-5",
                     inputTokens: 1_240, outputTokens: 198_000,
                     cacheReadTokens: 4_800_000, cacheCreateTokens: 412_000,
                     messageCount: 312),
-                "claude-sonnet-4-6": ModelUsage(
-                    model: "claude-sonnet-4-6",
+                "claude-sonnet-5-5": ModelUsage(
+                    model: "claude-sonnet-5-5",
                     inputTokens: 480, outputTokens: 42_000,
                     cacheReadTokens: 320_000, cacheCreateTokens: 18_000,
                     messageCount: 28),
-                "claude-haiku-4-5-20251001": ModelUsage(
-                    model: "claude-haiku-4-5-20251001",
+                "claude-haiku-5-5": ModelUsage(
+                    model: "claude-haiku-5-5",
                     inputTokens: 210, outputTokens: 12_000,
                     cacheReadTokens: 78_000, cacheCreateTokens: 4_900,
                     messageCount: 41),
@@ -39,18 +39,18 @@ enum DemoData {
 
         s.week = UsageWindow(
             byModel: [
-                "claude-opus-4-7": ModelUsage(
-                    model: "claude-opus-4-7",
+                "claude-opus-5-5": ModelUsage(
+                    model: "claude-opus-5-5",
                     inputTokens: 14_200, outputTokens: 1_840_000,
                     cacheReadTokens: 31_800_000, cacheCreateTokens: 6_400_000,
                     messageCount: 1_820),
-                "claude-sonnet-4-6": ModelUsage(
-                    model: "claude-sonnet-4-6",
+                "claude-sonnet-5-5": ModelUsage(
+                    model: "claude-sonnet-5-5",
                     inputTokens: 3_400, outputTokens: 380_000,
                     cacheReadTokens: 11_400_000, cacheCreateTokens: 240_000,
                     messageCount: 312),
-                "claude-haiku-4-5-20251001": ModelUsage(
-                    model: "claude-haiku-4-5-20251001",
+                "claude-haiku-5-5": ModelUsage(
+                    model: "claude-haiku-5-5",
                     inputTokens: 1_800, outputTokens: 140_000,
                     cacheReadTokens: 1_280_000, cacheCreateTokens: 32_000,
                     messageCount: 547),
@@ -143,18 +143,18 @@ enum DemoData {
 
         s.today = UsageWindow(
             byModel: [
-                "claude-opus-4-7": ModelUsage(
-                    model: "claude-opus-4-7",
+                "claude-opus-5-5": ModelUsage(
+                    model: "claude-opus-5-5",
                     inputTokens: 320, outputTokens: 18_400,
                     cacheReadTokens: 220_000, cacheCreateTokens: 14_800,
                     messageCount: 22),
-                "claude-sonnet-4-6": ModelUsage(
-                    model: "claude-sonnet-4-6",
+                "claude-sonnet-5-5": ModelUsage(
+                    model: "claude-sonnet-5-5",
                     inputTokens: 540, outputTokens: 48_200,
                     cacheReadTokens: 480_000, cacheCreateTokens: 26_400,
                     messageCount: 47),
-                "claude-haiku-4-5-20251001": ModelUsage(
-                    model: "claude-haiku-4-5-20251001",
+                "claude-haiku-5-5": ModelUsage(
+                    model: "claude-haiku-5-5",
                     inputTokens: 180, outputTokens: 5_200,
                     cacheReadTokens: 32_000, cacheCreateTokens: 1_800,
                     messageCount: 14),
@@ -164,18 +164,18 @@ enum DemoData {
 
         s.week = UsageWindow(
             byModel: [
-                "claude-opus-4-7": ModelUsage(
-                    model: "claude-opus-4-7",
+                "claude-opus-5-5": ModelUsage(
+                    model: "claude-opus-5-5",
                     inputTokens: 1_400, outputTokens: 92_000,
                     cacheReadTokens: 1_650_000, cacheCreateTokens: 88_000,
                     messageCount: 98),
-                "claude-sonnet-4-6": ModelUsage(
-                    model: "claude-sonnet-4-6",
+                "claude-sonnet-5-5": ModelUsage(
+                    model: "claude-sonnet-5-5",
                     inputTokens: 2_100, outputTokens: 184_000,
                     cacheReadTokens: 3_400_000, cacheCreateTokens: 132_000,
                     messageCount: 218),
-                "claude-haiku-4-5-20251001": ModelUsage(
-                    model: "claude-haiku-4-5-20251001",
+                "claude-haiku-5-5": ModelUsage(
+                    model: "claude-haiku-5-5",
                     inputTokens: 720, outputTokens: 22_400,
                     cacheReadTokens: 188_000, cacheCreateTokens: 9_400,
                     messageCount: 64),

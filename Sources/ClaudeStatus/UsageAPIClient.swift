@@ -147,6 +147,9 @@ actor UsageAPIClient {
         let buckets: [(key: String, label: String)] = [
             ("five_hour",            "5-hour"),
             ("seven_day",            "Weekly"),
+            // Seen in Claude Code 2.1.316, which treats it as a peer of
+            // five_hour/seven_day in its own rate-limit display.
+            ("seven_day_overage_included", "Weekly · incl. overage"),
             ("seven_day_opus",       "Weekly · Opus"),
             ("seven_day_sonnet",     "Weekly · Sonnet"),
             ("seven_day_oauth_apps", "Weekly · OAuth apps"),
@@ -164,6 +167,8 @@ actor UsageAPIClient {
             ))
             if b.key == "five_hour" { fiveHour = util }
             if b.key == "seven_day" { weekly = util }
+            // Menu bar "wk" figure: only when the plain weekly bucket is absent.
+            if b.key == "seven_day_overage_included", weekly == nil { weekly = util }
         }
 
         return UsageAPIResponse(
