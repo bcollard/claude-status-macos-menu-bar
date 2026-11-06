@@ -14,8 +14,8 @@
     gtag('config', 'G-VPXE38XTRB');
   </script>
 
-  <title>Claude Status — macOS menu bar for Claude Code usage</title>
-  <meta name="description" content="A tiny macOS menu bar app that monitors your Claude Code usage. Live plan limits, per-model breakdown, API-equivalent cost — without leaving the keyboard.">
+  <title>Claude Status — Claude Code usage &amp; Enterprise spend in your menu bar</title>
+  <meta name="description" content="Free macOS menu bar app for Claude Code on Pro, Max, Team and Enterprise: 5-hour and weekly limits, Enterprise Extra Usage spend in USD, per-model cost.">
   <link rel="canonical" href="https://claudestatus.runlocal.dev/">
 
   <meta name="theme-color" content="#d97757" media="(prefers-color-scheme: light)">
@@ -36,8 +36,8 @@
   <meta property="og:site_name" content="Claude Status">
   <meta property="og:locale" content="en_US">
   <meta property="og:url" content="https://claudestatus.runlocal.dev/">
-  <meta property="og:title" content="Claude Status — Claude Code usage in your menu bar">
-  <meta property="og:description" content="Live plan limits, today's spend, weekly cap, per-model breakdown. Reuses your Claude Code login. Open source, free, native Swift.">
+  <meta property="og:title" content="Claude Status — Claude Code usage in your menu bar, Enterprise included">
+  <meta property="og:description" content="Pro &amp; Max: 5-hour and weekly limits. Enterprise: monthly Extra Usage spend in USD against your cap. Per-model breakdown, reuses your Claude Code login. Free, open source.">
   <meta property="og:image" content="https://claudestatus.runlocal.dev/assets/og-image.png">
   <meta property="og:image:secure_url" content="https://claudestatus.runlocal.dev/assets/og-image.png">
   <meta property="og:image:type" content="image/png">
@@ -48,8 +48,8 @@
   <!-- Twitter / X large card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://claudestatus.runlocal.dev/">
-  <meta name="twitter:title" content="Claude Status — Claude Code usage in your menu bar">
-  <meta name="twitter:description" content="Live plan limits, today's spend, weekly cap, per-model breakdown. Reuses your Claude Code login. Open source, free, native Swift.">
+  <meta name="twitter:title" content="Claude Status — Claude Code usage in your menu bar, Enterprise included">
+  <meta name="twitter:description" content="Pro &amp; Max: 5-hour and weekly limits. Enterprise: monthly Extra Usage spend in USD against your cap. Per-model breakdown, reuses your Claude Code login. Free, open source.">
   <meta name="twitter:image" content="https://claudestatus.runlocal.dev/assets/og-image.png">
   <meta name="twitter:image:alt" content="Claude Status dropdown showing Extra Usage progress and per-model token breakdown.">
 
@@ -59,7 +59,7 @@
   <link rel="apple-touch-icon" href="/assets/favicon.svg">
   <link rel="mask-icon" href="/assets/favicon.svg" color="#d97757">
 
-  <link rel="stylesheet" href="/styles.css?v=v0.2.4">
+  <link rel="stylesheet" href="/styles.css?v=v0.2.5">
 
   <!-- Structured data (helps Google + some chat apps surface metadata) -->
   <script type="application/ld+json">
@@ -71,7 +71,7 @@
     "operatingSystem": "macOS 14+",
     "url": "https://claudestatus.runlocal.dev/",
     "downloadUrl": "https://github.com/bcollard/claude-status-macos-menu-bar/releases",
-    "description": "A native macOS menu bar app that monitors Claude Code usage. Live plan limits, per-model breakdown, API-equivalent cost.",
+    "description": "A native macOS menu bar app that monitors Claude Code usage on Pro, Max, Team and Enterprise plans. 5-hour and weekly limits, Enterprise Extra Usage spend in USD, per-model breakdown, API-equivalent cost.",
     "license": "https://github.com/bcollard/claude-status-macos-menu-bar/blob/main/LICENSE",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
     "softwareVersion": "0.2.4",
@@ -95,7 +95,7 @@
     <a href="https://github.com/bcollard/claude-status-macos-menu-bar" class="nav-github" target="_blank" rel="noopener">
       GitHub →
     </a>
-    <a href="https://github.com/bcollard/claude-status-macos-menu-bar/releases/tag/v0.2.4" class="nav-version" target="_blank" rel="noopener" title="Latest release">v0.2.4</a>
+    <a href="https://github.com/bcollard/claude-status-macos-menu-bar/releases/tag/v0.2.5" class="nav-version" target="_blank" rel="noopener" title="Latest release">v0.2.5</a>
     <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">
       <span class="sun">☀</span>
       <span class="moon">☾</span>
@@ -116,7 +116,7 @@
         <span class="grad">in your menu bar.</span>
       </h1>
       <p class="lede">
-        Live plan limits, today's spend, weekly cap, and per-model breakdown — pulled from your existing Claude Code login.
+        5-hour and weekly limits on Pro and Max. Monthly <strong>Extra Usage spend in USD</strong> on Enterprise. Per-model cost on every plan, from your existing Claude Code login.
       </p>
       <div class="cta">
         <a href="#install" class="btn btn-primary">Install with Homebrew</a>
@@ -130,7 +130,7 @@
       <ul class="hero-bullets">
         <li>Reads from your existing macOS Keychain — no new login.</li>
         <li>Local logs + opt-in API call. Your data stays on your Mac.</li>
-        <li>Pro, Max, Team, Enterprise. Pick a refresh cadence and forget it.</li>
+        <li>Works on Enterprise: tracks Extra Usage against your org's monthly cap. Pro, Max and Team too.</li>
       </ul>
     </div>
 
@@ -145,16 +145,16 @@
       </div>
 
       <div class="popup-stack" id="popupStack">
-        <picture>
+        <a class="zoomable" href="assets/popup-enterprise-light.png" title="Open full screen"><picture>
           <source srcset="assets/popup-enterprise-dark.png" media="(prefers-color-scheme: dark)">
           <img class="popup popup-active" id="popupEnt" src="assets/popup-enterprise-light.png"
                alt="Claude Status popup showing Enterprise plan with Extra Usage 69% and per-model breakdown">
-        </picture>
-        <picture>
+        </picture></a>
+        <a class="zoomable" href="assets/popup-pro-light.png" title="Open full screen"><picture>
           <source srcset="assets/popup-pro-dark.png" media="(prefers-color-scheme: dark)">
           <img class="popup" id="popupPro" src="assets/popup-pro-light.png"
                alt="Claude Status popup showing Pro plan with 5-hour and weekly utilization">
-        </picture>
+        </picture></a>
       </div>
 
       <div class="plan-switch" role="tablist" aria-label="Switch shown plan">
@@ -181,8 +181,8 @@
       </article>
       <article class="card">
         <span class="card-num">02</span>
-        <h3>Plan-aware</h3>
-        <p>Extra Usage in USD for Enterprise. Five-hour + weekly buckets for Pro &amp; Max. Same numbers as <em>claude.ai/settings/usage</em>.</p>
+        <h3>Plan-aware, Enterprise included</h3>
+        <p>Enterprise: monthly <a href="/claude-code-enterprise-extra-usage/">Extra Usage</a> spend in USD against your cap. Pro &amp; Max: five-hour and weekly buckets. Same numbers as <em>claude.ai/settings/usage</em>.</p>
       </article>
       <article class="card">
         <span class="card-num">03</span>
@@ -223,36 +223,36 @@
     <p class="kicker">Screenshots</p>
     <h2>The dropdown and settings</h2>
     <p class="section-lede">
-      The dropdown adapts to the data your plan exposes. Enterprise users see live <strong>$ spend</strong> against their monthly cap. Pro and Max users see their <strong>5-hour</strong> and <strong>weekly</strong> utilization.
+      The dropdown adapts to the data your plan exposes. Enterprise users see live <strong>$ spend</strong> against their monthly cap. Pro and Max users see their <strong>5-hour</strong> and <strong>weekly</strong> utilization. Click a screenshot to open it full screen.
     </p>
 
     <div class="gallery">
       <figure>
-        <picture>
+        <a class="zoomable" href="assets/popup-enterprise-light.png" title="Open full screen"><picture>
           <source srcset="assets/popup-enterprise-dark.png" media="(prefers-color-scheme: dark)">
           <img src="assets/popup-enterprise-light.png" alt="Enterprise dropdown" loading="lazy">
-        </picture>
+        </picture></a>
         <figcaption><strong>Enterprise.</strong> Watch <em>Extra Usage</em> tick up live against your monthly cap.</figcaption>
       </figure>
       <figure>
-        <picture>
+        <a class="zoomable" href="assets/popup-pro-light.png" title="Open full screen"><picture>
           <source srcset="assets/popup-pro-dark.png" media="(prefers-color-scheme: dark)">
           <img src="assets/popup-pro-light.png" alt="Pro dropdown" loading="lazy">
-        </picture>
+        </picture></a>
         <figcaption><strong>Pro &amp; Max.</strong> Five-hour and weekly utilization with reset timers.</figcaption>
       </figure>
       <figure class="figure-wide">
-        <picture>
+        <a class="zoomable" href="assets/settings-light.png" title="Open full screen"><picture>
           <source srcset="assets/settings-dark.png" media="(prefers-color-scheme: dark)">
           <img src="assets/settings-light.png" alt="Settings window" loading="lazy">
-        </picture>
+        </picture></a>
         <figcaption><strong>Options.</strong> Pick how often the API gets polled, or turn it off entirely — and keep Keychain access working automatically.</figcaption>
       </figure>
       <figure class="figure-wide">
-        <picture>
+        <a class="zoomable" href="assets/diagnostics-light.png" title="Open full screen"><picture>
           <source srcset="assets/diagnostics-dark.png" media="(prefers-color-scheme: dark)">
           <img src="assets/diagnostics-light.png" alt="Diagnostics tab showing App Integrity status and Keychain credential entries" loading="lazy">
-        </picture>
+        </picture></a>
         <figcaption><strong>Diagnostics.</strong> Confirms the app is genuinely signed and notarized, shows Keychain automation status, and every credential entry considered — which one it picked, and why the others lost.</figcaption>
       </figure>
     </div>
@@ -533,6 +533,129 @@ brew install --cask claude-status" aria-label="Copy install command">Copy</butto
         } catch (e) { /* clipboard not available */ }
       });
     });
+  })();
+
+  // Full-screen viewer for <a class="zoomable" href="image"><picture>…</picture></a>.
+  // Pinch or ctrl+wheel zooms around the pointer, scroll or drag pans, +/-/0 keys, Esc closes.
+  // Opens img.currentSrc so the dark variant picked by <picture> is the one shown;
+  // without JS the link opens the light image itself.
+  (function() {
+    var links = document.querySelectorAll('a.zoomable');
+    if (!links.length) return;
+    var viewer = document.createElement('div');
+    viewer.className = 'zoom-viewer';
+    viewer.hidden = true;
+    viewer.setAttribute('role', 'dialog');
+    viewer.setAttribute('aria-modal', 'true');
+    viewer.innerHTML = '<div class="zoom-bar"><span class="zoom-level"></span>' +
+      '<button type="button" data-z="out" aria-label="Zoom out">−</button>' +
+      '<button type="button" data-z="fit" aria-label="Fit to screen">Fit</button>' +
+      '<button type="button" data-z="in" aria-label="Zoom in">+</button>' +
+      '<button type="button" data-z="close" aria-label="Close">✕</button></div>' +
+      '<div class="zoom-stage"><img alt=""></div>';
+    document.body.appendChild(viewer);
+    var stage = viewer.querySelector('.zoom-stage');
+    var img = stage.querySelector('img');
+    var level = viewer.querySelector('.zoom-level');
+    var natW = 1, natH = 1, fit = 1, scale = 1, opener = null;
+
+    function apply(next, cx, cy) {
+      next = Math.min(Math.max(next, fit * 0.5), 8);
+      // keep the point under (cx, cy) in place
+      var r = stage.getBoundingClientRect();
+      cx = cx === undefined ? r.width / 2 : cx - r.left;
+      cy = cy === undefined ? r.height / 2 : cy - r.top;
+      var fx = (stage.scrollLeft + cx) / (natW * scale), fy = (stage.scrollTop + cy) / (natH * scale);
+      scale = next;
+      img.style.width = Math.round(natW * scale) + 'px';
+      img.style.height = Math.round(natH * scale) + 'px';
+      stage.scrollLeft = fx * natW * scale - cx;
+      stage.scrollTop = fy * natH * scale - cy;
+      level.textContent = Math.round(scale * 100) + '%';
+    }
+    function fitScale() {
+      var r = stage.getBoundingClientRect();
+      // never upscale past 100% on open: retina PNGs already carry 2x pixels
+      return Math.min((r.width - 32) / natW, (r.height - 24) / natH, 1);
+    }
+    function open(href, alt, a) {
+      opener = a;
+      img.alt = alt || '';
+      viewer.hidden = false;
+      document.documentElement.style.overflow = 'hidden';
+      img.onload = function() {
+        natW = img.naturalWidth || 1200; natH = img.naturalHeight || 800;
+        fit = fitScale(); scale = fit; apply(fit);
+      };
+      img.src = href;
+      viewer.querySelector('[data-z="close"]').focus();
+    }
+    function close() {
+      viewer.hidden = true;
+      document.documentElement.style.overflow = '';
+      if (opener) opener.focus();
+    }
+    links.forEach(function(a) {
+      a.addEventListener('click', function(e) {
+        if (e.metaKey || e.ctrlKey || e.shiftKey) return; // let new-tab clicks through
+        e.preventDefault();
+        var i = a.querySelector('img');
+        open((i && i.currentSrc) || a.getAttribute('href'), i && i.alt, a);
+      });
+    });
+    viewer.addEventListener('click', function(e) {
+      var z = e.target.getAttribute && e.target.getAttribute('data-z');
+      if (z === 'in') apply(scale * 1.25);
+      else if (z === 'out') apply(scale / 1.25);
+      else if (z === 'fit') apply(fit);
+      else if (z === 'close' || e.target === stage) close();
+    });
+    // trackpad pinch arrives as ctrl+wheel; plain scrolling pans natively
+    stage.addEventListener('wheel', function(e) {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      apply(scale * Math.exp(-e.deltaY * 0.01), e.clientX, e.clientY);
+    }, { passive: false });
+    document.addEventListener('keydown', function(e) {
+      if (viewer.hidden) return;
+      if (e.key === 'Escape') close();
+      else if (e.key === '+' || e.key === '=') apply(scale * 1.25);
+      else if (e.key === '-') apply(scale / 1.25);
+      else if (e.key === '0') apply(fit);
+    });
+    window.addEventListener('resize', function() { if (!viewer.hidden) fit = fitScale(); });
+
+    // drag to pan with one pointer, pinch to zoom with two
+    var pts = {}, last = null, pinch = 0, moved = false;
+    stage.addEventListener('pointerdown', function(e) {
+      pts[e.pointerId] = e; stage.setPointerCapture(e.pointerId);
+      stage.classList.add('dragging'); last = e; moved = false;
+    });
+    stage.addEventListener('pointermove', function(e) {
+      if (!pts[e.pointerId]) return;
+      pts[e.pointerId] = e;
+      var ids = Object.keys(pts);
+      if (ids.length === 2) {
+        var a = pts[ids[0]], b = pts[ids[1]];
+        var d = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+        if (pinch) apply(scale * d / pinch, (a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2);
+        pinch = d; moved = true;
+      } else if (last) {
+        stage.scrollLeft -= e.clientX - last.clientX;
+        stage.scrollTop -= e.clientY - last.clientY;
+        if (Math.abs(e.clientX - last.clientX) + Math.abs(e.clientY - last.clientY) > 0) moved = true;
+        last = e;
+      }
+    });
+    function up(e) {
+      delete pts[e.pointerId];
+      if (Object.keys(pts).length < 2) pinch = 0;
+      if (!Object.keys(pts).length) { stage.classList.remove('dragging'); last = null; }
+    }
+    stage.addEventListener('pointerup', up);
+    stage.addEventListener('pointercancel', up);
+    // a click on the backdrop closes, but not the end of a drag
+    stage.addEventListener('click', function(e) { if (moved) e.stopPropagation(); }, true);
   })();
 </script>
 

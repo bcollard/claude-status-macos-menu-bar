@@ -598,3 +598,22 @@ html { scroll-behavior: smooth; scroll-padding-top: 80px; }
 .prose .faq-list { max-width: none; }
 .breadcrumb { font-size: 13px; color: var(--text-2); margin-bottom: 18px; }
 .breadcrumb a { color: var(--text-2); }
+
+/* ---------- Zoomable screenshots ---------- */
+/* <a class="zoomable" href="full.png"><picture>…</picture></a>; the inline script in
+   index.html opens a full-screen viewer, without JS the link opens the image itself */
+a.zoomable { cursor: zoom-in; }
+.gallery a.zoomable { display: block; width: 100%; }
+a.zoomable img { transition: opacity .15s; }
+a.zoomable:hover img { opacity: .9; }
+/* the hidden hero popup sits on top of the visible one; keep it from taking the click */
+.popup:not(.popup-active) { pointer-events: none; }
+.zoom-viewer { position: fixed; inset: 0; z-index: 1000; background: rgba(8, 9, 14, .97); backdrop-filter: blur(4px); display: flex; flex-direction: column; }
+.zoom-viewer[hidden] { display: none; }
+.zoom-bar { background: #0f1118; border-bottom: 1px solid rgba(255,255,255,.08); display: flex; gap: 8px; align-items: center; justify-content: flex-end; padding: 10px 16px; color: #e6e8f2; font-size: 13px; }
+.zoom-bar .zoom-level { margin-right: auto; font-variant-numeric: tabular-nums; color: #b5b9cc; }
+.zoom-bar button { font: inherit; min-width: 36px; height: 34px; padding: 0 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,.15); background: rgba(255,255,255,.08); color: #fff; cursor: pointer; }
+.zoom-bar button:hover { background: rgba(255,255,255,.16); }
+.zoom-stage { flex: 1; overflow: auto; cursor: grab; touch-action: none; overscroll-behavior: contain; padding-top: 12px; }
+.zoom-stage.dragging { cursor: grabbing; }
+.zoom-stage img { display: block; margin: 0 auto 24px; max-width: none; user-select: none; -webkit-user-drag: none; }
